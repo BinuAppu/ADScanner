@@ -203,7 +203,6 @@ function SMBNull($guid) {
  
 }
 
-<<<<<<< HEAD
 function GetPatchStatus($guid) {
     Write-Host " [+] Getting last 3 Patch install details from server." -ForegroundColor Green
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
@@ -211,29 +210,12 @@ function GetPatchStatus($guid) {
         Get-Hotfix -ComputerName $dc | Sort-Object -Property InstalledOn -Descending | Select-Object -First 3 | Export-Csv -Append -NoTypeInformation -Path GetPatchStatus_$guid.csv
     }
 }
-=======
-function GetPatchStatus($guid){
-    Write-Host " [+] Getting last 3 Patch install details from server." -ForegroundColor Green
-    $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
-    foreach($dc in $allDC){
-        Get-Hotfix -ComputerName $dc | Sort-Object -Property InstalledOn -Descending | Select-Object -First 3 | Export-Csv -Append -NoTypeInformation -Path GetPatchStatus_$guid.csv
-    }
-}
->>>>>>> f925ab31fd27cac23034b7fc084913342c826528
 
-<<<<<<< HEAD
 function DomainAdmins($guid) {
     Write-Host " [+] Getting Domain Admins User lists" -ForegroundColor Green
     Get-ADGroupMember "Domain Admins" -Recursive | Export-Csv -Append -NoTypeInformation -Path DomainAdmins_$guid.csv
 }
-=======
-function DomainAdmins($guid){
-    Write-Host " [+] Getting Domain Admins User lists" -ForegroundColor Green
-    Get-ADGroupMember "Domain Admins" -Recursive | Export-Csv -Append -NoTypeInformation -Path DomainAdmins_$guid.csv
-}
->>>>>>> f925ab31fd27cac23034b7fc084913342c826528
 
-<<<<<<< HEAD
 function LLMR_NetBIOS($guid) {
     Write-Host " [+] Checking LLMNR, NetBIOS, MDNS status" -ForegroundColor Green
     # Add-Content -Value "----- Below list of AD allows Anonymous Access to AD ---- " -path anonymousSharesSAM_$Guid.csv
@@ -278,42 +260,6 @@ function DefaultOUUGC ($guid) {
     Add-Content -Value "$userc , $groupc , $contactc" -Path DefaultOUUGC_$guid.csv
 }
 
-=======
-function LLMR_NetBIOS($guid){
-    Write-Host " [+] Checking LLMNR, NetBIOS, MDNS status" -ForegroundColor Green
-    # Add-Content -Value "----- Below list of AD allows Anonymous Access to AD ---- " -path anonymousSharesSAM_$Guid.csv
-    $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
-    # Netbios
-
-    ForEach ($dc in $allDC) {
-            
-        $nb = Invoke-Command -ScriptBlock { (Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\netbt\Parameters\interfaces\tcpip_*' -Name NetBiosOptions).NetBiosOptions } -ComputerName $dc  # 0
-        
-        foreach($nbv in $nb){
-            if($nbv -ne 0){
-                Add-Content -Value " $dc , NetBIOSOverTCP is Enabled" -path LLMR_NetBIOS_$guid.csv
-            }
-        }
-
-        $mdns = Invoke-Command -ScriptBlock { (Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' -Name EnableMDNS).EnableMDNS } -ComputerName $dc  # 0
-       
-        if($mdns -ne 0 -or $error){
-            Add-Content -Value " $dc , MDNS is Enabled" -path LLMR_NetBIOS_$guid.csv
-        }
-        $error.Clear()
-
-        $llmnr = Invoke-Command -ScriptBlock { (Get-ItemProperty -Path 'HKLM:\Software\policies\Microsoft\Windows NT\DNSClient' -Name EnableMulticast).EnableMulticast } -ComputerName $dc  # 0
-
-        if($llmnr -ne 0 -or $error){
-            Add-Content -Value " $dc , LLMNR is Enabled" -path LLMR_NetBIOS_$guid.csv
-        }
-        $error.Clear()
-
-    }
-    
-}
-
->>>>>>> f925ab31fd27cac23034b7fc084913342c826528
 cls
 $ErrorActionPreference = "SilentlyContinue"
 $FormatEnumerationLimit = -1
@@ -329,28 +275,14 @@ Netlogonperm $guid
 RootHiddendelegate $guid
 SMBNull $guid
 ServiceAcct $guid
-<<<<<<< HEAD
 GetPatchStatus $guid
 DomainAdmins $guid
 LLMR_NetBIOS $guid
 DefaultOUUGC $guid
-=======
-GetPatchStatus $guid
-DomainAdmins $guid
-LLMR_NetBIOS $guid
->>>>>>> f925ab31fd27cac23034b7fc084913342c826528
-
 
 # LDAPport $guid
-<<<<<<< HEAD
-=======
-
-
-
->>>>>>> f925ab31fd27cac23034b7fc084913342c826528
 # OUHiddenDelegate $guid
 
-<<<<<<< HEAD
 function Report($guid){
     Write-Host " [+] Lets write some HTML Report..." -ForegroundColor Yellow
     $Header = $Header = @"
@@ -396,9 +328,6 @@ function Report($guid){
     </style>
 "@
 Add-Content -Value "<html> $header" -Path Report_$guid.html
-=======
-$ErrorActionPreference = "Continue"
->>>>>>> f925ab31fd27cac23034b7fc084913342c826528
 
 Add-Content -Value "<H1>AD Scanner Report</H1>" -Path Report_$guid.html
 Import-Csv asrep_$guid.csv | ConvertTo-Html -head "<h2>ASREP Roast</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
