@@ -203,6 +203,15 @@ function SMBNull($guid) {
  
 }
 
+<<<<<<< HEAD
+function GetPatchStatus($guid) {
+    Write-Host " [+] Getting last 3 Patch install details from server." -ForegroundColor Green
+    $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
+    foreach ($dc in $allDC) {
+        Get-Hotfix -ComputerName $dc | Sort-Object -Property InstalledOn -Descending | Select-Object -First 3 | Export-Csv -Append -NoTypeInformation -Path GetPatchStatus_$guid.csv
+    }
+}
+=======
 function GetPatchStatus($guid){
     Write-Host " [+] Getting last 3 Patch install details from server." -ForegroundColor Green
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
@@ -210,12 +219,66 @@ function GetPatchStatus($guid){
         Get-Hotfix -ComputerName $dc | Sort-Object -Property InstalledOn -Descending | Select-Object -First 3 | Export-Csv -Append -NoTypeInformation -Path GetPatchStatus_$guid.csv
     }
 }
+>>>>>>> f925ab31fd27cac23034b7fc084913342c826528
 
+<<<<<<< HEAD
+function DomainAdmins($guid) {
+    Write-Host " [+] Getting Domain Admins User lists" -ForegroundColor Green
+    Get-ADGroupMember "Domain Admins" -Recursive | Export-Csv -Append -NoTypeInformation -Path DomainAdmins_$guid.csv
+}
+=======
 function DomainAdmins($guid){
     Write-Host " [+] Getting Domain Admins User lists" -ForegroundColor Green
     Get-ADGroupMember "Domain Admins" -Recursive | Export-Csv -Append -NoTypeInformation -Path DomainAdmins_$guid.csv
 }
+>>>>>>> f925ab31fd27cac23034b7fc084913342c826528
 
+<<<<<<< HEAD
+function LLMR_NetBIOS($guid) {
+    Write-Host " [+] Checking LLMNR, NetBIOS, MDNS status" -ForegroundColor Green
+    # Add-Content -Value "----- Below list of AD allows Anonymous Access to AD ---- " -path anonymousSharesSAM_$Guid.csv
+    $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
+    # Netbios
+
+    ForEach ($dc in $allDC) {
+            
+        $nb = Invoke-Command -ScriptBlock { (Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\netbt\Parameters\interfaces\tcpip_*' -Name NetBiosOptions).NetBiosOptions } -ComputerName $dc  # 0
+        
+        foreach ($nbv in $nb) {
+            if ($nbv -ne 0) {
+                Add-Content -Value " $dc , NetBIOSOverTCP is Enabled" -path LLMR_NetBIOS_$guid.csv
+            }
+        }
+
+        $mdns = Invoke-Command -ScriptBlock { (Get-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' -Name EnableMDNS).EnableMDNS } -ComputerName $dc  # 0
+       
+        if ($mdns -ne 0 -or $error) {
+            Add-Content -Value " $dc , MDNS is Enabled" -path LLMR_NetBIOS_$guid.csv
+        }
+        $error.Clear()
+
+        $llmnr = Invoke-Command -ScriptBlock { (Get-ItemProperty -Path 'HKLM:\Software\policies\Microsoft\Windows NT\DNSClient' -Name EnableMulticast).EnableMulticast } -ComputerName $dc  # 0
+
+        if ($llmnr -ne 0 -or $error) {
+            Add-Content -Value " $dc , LLMNR is Enabled" -path LLMR_NetBIOS_$guid.csv
+        }
+        $error.Clear()
+
+    }
+    
+}
+
+function DefaultOUUGC ($guid) {
+    Write-Host " [+] Checking user/group part of default CN=User Container" -ForegroundColor Green
+    $DomainDN = (Get-ADDomain).DistinguishedName
+    $userc = (Get-ADUser -SearchBase "CN=Users,$DomainDN" -Filter *).count
+    $groupc = (Get-ADGroup -SearchBase "CN=Users,$DomainDN" -Filter *).count
+    $contactc = ((Get-ADObject -Filter 'objectclass -eq "contact"' -SearchBase "CN=Users,$DomainDN").name).count
+    Add-Content -Value "User , Group , contact " -Path DefaultOUUGC_$guid.csv
+    Add-Content -Value "$userc , $groupc , $contactc" -Path DefaultOUUGC_$guid.csv
+}
+
+=======
 function LLMR_NetBIOS($guid){
     Write-Host " [+] Checking LLMNR, NetBIOS, MDNS status" -ForegroundColor Green
     # Add-Content -Value "----- Below list of AD allows Anonymous Access to AD ---- " -path anonymousSharesSAM_$Guid.csv
@@ -250,6 +313,7 @@ function LLMR_NetBIOS($guid){
     
 }
 
+>>>>>>> f925ab31fd27cac23034b7fc084913342c826528
 cls
 $ErrorActionPreference = "SilentlyContinue"
 $FormatEnumerationLimit = -1
@@ -265,15 +329,95 @@ Netlogonperm $guid
 RootHiddendelegate $guid
 SMBNull $guid
 ServiceAcct $guid
+<<<<<<< HEAD
 GetPatchStatus $guid
 DomainAdmins $guid
 LLMR_NetBIOS $guid
+DefaultOUUGC $guid
+=======
+GetPatchStatus $guid
+DomainAdmins $guid
+LLMR_NetBIOS $guid
+>>>>>>> f925ab31fd27cac23034b7fc084913342c826528
 
 
 # LDAPport $guid
+<<<<<<< HEAD
+=======
 
 
 
+>>>>>>> f925ab31fd27cac23034b7fc084913342c826528
 # OUHiddenDelegate $guid
+
+<<<<<<< HEAD
+function Report($guid){
+    Write-Host " [+] Lets write some HTML Report..." -ForegroundColor Yellow
+    $Header = $Header = @"
+    <style>
+        h1 {
+    
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000099;
+            font-size: 28px;
+        } 
+        h2 {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000099;
+            font-size: 16px;
+        }
+       table {
+            font-size: 12px;
+            border: 0px; 
+            font-family: Arial, Helvetica, sans-serif;
+        } 
+        td {
+            padding: 4px;
+            margin: 0px;
+            border: 0;
+        }
+        th {
+            background: #395870;
+            background: linear-gradient(#49708f, #293f50);
+            color: #fff;
+            font-size: 11px;
+            text-transform: uppercase;
+            padding: 10px 15px;
+            vertical-align: middle;
+        }
+        tbody tr:nth-child(even) {
+            background: #f0f0f2;
+        }
+            #CreationDate {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #ff3300;
+            font-size: 12px;
+        }
+    </style>
+"@
+Add-Content -Value "<html> $header" -Path Report_$guid.html
+=======
+$ErrorActionPreference = "Continue"
+>>>>>>> f925ab31fd27cac23034b7fc084913342c826528
+
+Add-Content -Value "<H1>AD Scanner Report</H1>" -Path Report_$guid.html
+Import-Csv asrep_$guid.csv | ConvertTo-Html -head "<h2>ASREP Roast</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv Kerberosting_$guid.csv | ConvertTo-Html -head "<h2>Kerberostable Account</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv PasswordNeverExpires_$guid.csv | ConvertTo-Html -head "<h2>Password Never Expires</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv SysvolPerm_$guid.csv | ConvertTo-Html -head "<h2>Sysvol Non-Default Permission</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv unexpectedFileShareOnAD_$guid.csv | ConvertTo-Html -head "<h2>Unexpected File Shares in AD</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv Netlogonperm_$guid.csv | ConvertTo-Html -head "<h2>Netlogon Non-Default Permission</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv RootHiddendelegate_$guid.csv | ConvertTo-Html -head "<h2>Root Hidden Delegation</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv SMBNull_$guid.csv | ConvertTo-Html -head "<h2>SMB Null Session</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv ServiceAcct_$guid.csv | ConvertTo-Html -head "<h2>Service Account</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv GetPatchStatus_$guid.csv | ConvertTo-Html -head "<h2>Last 3 OS Patch Status on AD</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv DomainAdmins_$guid.csv | ConvertTo-Html -head "<h2>Domain Admin Lists</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv LLMR_NetBIOS_$guid.csv | ConvertTo-Html -head "<h2>LLMNR / NETBIOS / MDNS Enablement Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv DefaultOUUGC_$guid.csv | ConvertTo-Html -head "<h2>Default Users under Root OU - cn=users </h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+
+Add-Content -Value "</html>" -Path Report_$guid.html
+}
+
+Report $guid
 
 $ErrorActionPreference = "Continue"
