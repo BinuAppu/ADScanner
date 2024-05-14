@@ -1,5 +1,5 @@
 # Appu - AD Health checker
-
+$version = "1.0"
 $Logo = "
                                               
     ___    ____     _____                                 
@@ -11,7 +11,7 @@ $Logo = "
 
 ==============================================
 Author  : Binu Balan
-Version : 1.0
+Version : $version
 ==============================================
 "
 
@@ -260,6 +260,76 @@ function DefaultOUUGC ($guid) {
     Add-Content -Value "$userc , $groupc , $contactc" -Path DefaultOUUGC_$guid.csv
 }
 
+function AntivirusStatus ($guid){
+    Write-Host " [+] Checking antivirus installation..." -ForegroundColor Green
+    $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
+    # Netbios
+    Add-Content -Value "DomainController , AntivirusInstalled" -Path AntivirusStatus_$guid.csv
+    ForEach ($dc in $allDC) {
+        $AvName = Invoke-Command -ScriptBlock { (Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntivirusProduct | select displayname -ExpandProperty displayname) -join "," } -ComputerName $dc  # 0
+        # (Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntivirusProduct -ComputerName $dc | select displayname -ExpandProperty displayname) -join ","
+        Add-Content -Value "$dc , $AvName" -Path AntivirusStatus_$guid.csv
+    }
+}
+
+function unconstraintDelegation ($guid){
+    Write-Host " [+] Unconstraint Delegation for Users and Machines..." -ForegroundColor Green
+    Get-ADComputer -Filter {msDS-AllowedToDelegateTo -like "*"} -Properties msDS-AllowedToDelegateTo | Select Name, msDS-AllowedToDelegateTo | Export-Csv -NoTypeInformation -Path UnconstraintDelegation_Comp_$guid.csv
+    Get-ADUser -Filter {msDS-AllowedToDelegateTo -like "*"} -Properties msDS-AllowedToDelegateTo | Select Name, msDS-AllowedToDelegateTo | Export-Csv -NoTypeInformation -Path UnconstraintDelegation_User_$guid.csv
+
+    Get-ADuser -Filter {TrustedForDelegation -eq $true} -Properties trustedfordelegation,serviceprincipalname,description | select SamAccountName,UserPrincipalName,TrustedForDelegation | Export-Csv -NoTypeInformation -Path TrustedforDelegation_User_$guid.csv
+    Get-ADComputer -Filter {TrustedForDelegation -eq $true} -Properties trustedfordelegation,serviceprincipalname,description | select SamAccountName,UserPrincipalName,TrustedForDelegation | Export-Csv -NoTypeInformation -Path TrustedforDelegation_Comp_$guid.csv
+}
+
+function DCSyncAccess($guid){
+    Write-Host " [+] Checking for DCSync Access..." -ForegroundColor Green
+    $DCval = (Get-ADDomain).DistinguishedName
+    $acl = Get-Acl -Path "AD:$DCval"
+    
+    $searchDCSyncAccess = $acl.Access | Where-Object{($_.ObjectType -eq "1131f6aa-9c07-11d1-f79f-00c04fc2dcd2" -or $_.ObjectType -eq "1131f6ad-9c07-11d1-f79f-00c04fc2dcd2" -or $_.ObjectType -eq "89e95b76-444d-4c62-991a-0facbeda640c" -or $_.ObjectType -eq "1131f6ad-9c07-11d1-f79f-00c04fc2dcd2" -or $_.ObjectType -eq "1131f6aa-9c07-11d1-f79f-00c04fc2dcd2" -or $_.ObjectType -eq "bf967aba-0de6-11d0-a285-00aa003049e2" -or $_.ObjectType -eq "00000000-0000-0000-0000-000000000001" -or $_.ObjectType -eq "00000000-0000-0000-0000-000000000002" -or $_.ObjectType -eq "00000000-0000-0000-0000-000000000000") } | select IdentityReference,IsInherited
+
+    foreach($eachids in $searchDCSyncAccess){
+        if($eachids -like "*ENTERPRISE DOMAIN CONTROLLERS*" -or $eachids -like "*Administrators*" -or $eachids -like "*Enterprise Read-only Domain Controllers*" -or $eachids -like "*Domain Controllers*" -or $eachids -like "*NT AUTHORITY\SYSTEM*" -or $eachids -like "*APPU\Enterprise Admins*" -or $eachids -like "*APPU\Domain Admins*" -or $eachids -like "*BUILTIN\Pre-Windows*"){
+            # Do Nothing
+        } else {
+            $idval = $eachids.IdentityReference
+            $eachids | Export-Csv -Path DCSyncAccess_$guid.csv -Append -NoTypeInformation
+        }
+    }
+    <#
+    https://www.sentinelone.com/blog/active-directory-dcsync-attacks/
+    #>
+}
+
+function dumpntds($guid){
+    Write-Host " [+] Checking which users have access to Dump NTDS.dit..." -ForegroundColor Green
+    Get-ADGroupMember "Backup Operators" -Recursive | Export-Csv -Append -NoTypeInformation -Path dumpntds_$guid.csv
+    Get-ADGroupMember "Server Operators" -Recursive | Export-Csv -Append -NoTypeInformation -Path dumpntds_$guid.csv
+    Get-ADGroupMember "Administrators" -Recursive | Export-Csv -Append -NoTypeInformation -Path dumpntds_$guid.csv
+}
+
+function GPOChangeAccess ($guid) {
+    $allGPO = Get-GPO -All
+    Add-Content -Value "GPOName , Trustee , Permission" -Path GPOChangeAccess_$guid.csv
+    foreach($eachgpo in $allGPO){
+        $gpoguid = $eachgpo.Id
+        $gponame = $eachgpo.DisplayName
+        $gpperms = Get-GPPermission -Guid $gpoguid -All | Where-Object { $_.Permission -eq "GpoEdit" -or $_.Permission -eq "GpoEditDeleteModifySecurity" }
+        foreach($gpperm in $gpperms){
+            $Trustee = $gpperm.Trustee.Name
+            $TrusteeType = $gpperm.TrusteeType
+            $Permission = $gpperm.Permission
+            if($Trustee -like "*SYSTEM*" -or $Trustee -like "*Domain Admins*" -or $Trustee -like "*Enterprise Admins*"){
+                # Do nothing
+            } else {
+                # Write-Host "$gponame , $Trustee , $TrusteeType , $Permission" 
+                "$gponame , $Trustee , $Permission" | Out-File GPOChangeAccess_$guid.csv -Append
+            }
+            
+        }
+    }    
+}
+
 cls
 $ErrorActionPreference = "SilentlyContinue"
 $FormatEnumerationLimit = -1
@@ -279,6 +349,11 @@ GetPatchStatus $guid
 DomainAdmins $guid
 LLMR_NetBIOS $guid
 DefaultOUUGC $guid
+AntivirusStatus $guid
+unconstraintDelegation $guid
+DCSyncAccess $guid
+dumpntds $guid
+GPOChangeAccess $guid
 
 # LDAPport $guid
 # OUHiddenDelegate $guid
@@ -297,6 +372,11 @@ function Report($guid){
             font-family: Arial, Helvetica, sans-serif;
             color: #000099;
             font-size: 16px;
+        }
+        h3 {
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000099;
+            font-size: 12px;
         }
        table {
             font-size: 12px;
@@ -327,10 +407,19 @@ function Report($guid){
         }
     </style>
 "@
-Add-Content -Value "<html> $header" -Path Report_$guid.html
+$addomain = (Get-ADDomainController | select Domain).Domain
 
+Add-Content -Value "<html>" -Path Report_$guid.html
+Add-Content -Value "<title>AD Scanner</title>" -Path Report_$guid.html
 Add-Content -Value "<H1>AD Scanner Report</H1>" -Path Report_$guid.html
-Import-Csv asrep_$guid.csv | ConvertTo-Html -head "<h2>ASREP Roast</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Add-Content -Value "<H2>Author     : Binu Balan</H2>" -Path Report_$guid.html
+Add-Content -Value "<H2>Version    : $version </H2>" -Path Report_$guid.html
+Add-Content -Value "<H2><i>Running Query against Domain -</B> $addomain </B></i></H2>" -Path Report_$guid.html
+
+Add-Content -Value "$header" -Path Report_$guid.html
+
+
+Import-Csv asrep_$guid.csv | ConvertTo-Html -head "<h2>ASREP Roast - Password Not Required</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv Kerberosting_$guid.csv | ConvertTo-Html -head "<h2>Kerberostable Account</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv PasswordNeverExpires_$guid.csv | ConvertTo-Html -head "<h2>Password Never Expires</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv SysvolPerm_$guid.csv | ConvertTo-Html -head "<h2>Sysvol Non-Default Permission</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
@@ -343,6 +432,15 @@ Import-Csv GetPatchStatus_$guid.csv | ConvertTo-Html -head "<h2>Last 3 OS Patch 
 Import-Csv DomainAdmins_$guid.csv | ConvertTo-Html -head "<h2>Domain Admin Lists</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv LLMR_NetBIOS_$guid.csv | ConvertTo-Html -head "<h2>LLMNR / NETBIOS / MDNS Enablement Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv DefaultOUUGC_$guid.csv | ConvertTo-Html -head "<h2>Default Users under Root OU - cn=users </h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv AntivirusStatus_$guid.csv | ConvertTo-Html -head "<h2>Antivirus Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv UnconstraintDelegation_User_$guid.csv | ConvertTo-Html -head "<h2>Unconstraint User Delegation</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv UnconstraintDelegation_Comp_$guid.csv | ConvertTo-Html -head "<h2>Unconstraint Computer Delegation</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv TrustedforDelegation_user_$guid.csv | ConvertTo-Html -head "<h2>User Trusted for Delegation</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv TrustedforDelegation_Comp_$guid.csv | ConvertTo-Html -head "<h2>Computer Trusted for Delegation</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv DCSyncAccess_$guid.csv | ConvertTo-Html -head "<h2>DCSync Access Enabled IDs</h2><p><h3>Check if these users have excess permission as they have ObjectType value as 00000000-0000-0000-0000-000000000000<p> This could be Read All or Generic All too.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv dumpntds_$guid.csv | ConvertTo-Html -head "<h2>Users Having Acces to Dump NTDS.DIT</h2><p><h3>Members of Server Operator, Backup Operator, Administrators.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv GPOChangeAccess_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
+
 
 Add-Content -Value "</html>" -Path Report_$guid.html
 }
@@ -350,3 +448,5 @@ Add-Content -Value "</html>" -Path Report_$guid.html
 Report $guid
 
 $ErrorActionPreference = "Continue"
+
+start .\Report_$guid.html
