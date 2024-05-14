@@ -1,6 +1,11 @@
-# Appu - AD Health checker
+<# 
+.Appu : AD Health checker
+.Created by : Binu Balan
+.Purpose : To scan Active Directory for Misconfiguration
+#>
+
 $version = "1.0"
-$Logo = "
+$Logo1 = "
                                               
     ___    ____     _____                                 
    /   |  / __ \   / ___/_________ ____  ____  ___  _____
@@ -15,21 +20,47 @@ Version : $version
 ==============================================
 "
 
-Import-Module ActiveDirectory | Out-Null
+$logo2 = "
 
-$Header = @"
-<style>
-TABLE {border-width: 1px; border-style: solid; border-color: black; border-collapse: collapse;}
-TD {border-width: 1px; padding: 3px; border-style: solid; border-color: black;}
-</style>
-"@
+                                                                                               
+  _|_|    _|_|_|          _|_|_|                                                              
+_|    _|  _|    _|      _|          _|_|_|    _|_|_|  _|_|_|    _|_|_|      _|_|    _|  _|_|  
+_|_|_|_|  _|    _|        _|_|    _|        _|    _|  _|    _|  _|    _|  _|_|_|_|  _|_|      
+_|    _|  _|    _|            _|  _|        _|    _|  _|    _|  _|    _|  _|        _|        
+_|    _|  _|_|_|        _|_|_|      _|_|_|    _|_|_|  _|    _|  _|    _|    _|_|_|  _|        
+                                                                   
+
+==============================================
+Author  : Binu Balan
+Version : $version
+==============================================                                                                                                                                                                                                    
+"
+
+$logo3 = "
+       _        _  _  _  _                _  _  _  _                                                                                          
+     _(_)_     (_)(_)(_)(_)             _(_)(_)(_)(_)_                                                                                       
+   _(_) (_)_    (_)      (_)_          (_)          (_)   _  _  _    _  _  _       _  _  _  _    _  _  _  _     _  _  _  _    _       _  _     
+ _(_)     (_)_  (_)        (_)         (_)_  _  _  _    _(_)(_)(_)  (_)(_)(_) _   (_)(_)(_)(_)_ (_)(_)(_)(_)_  (_)(_)(_)(_)_ (_)_  _ (_)(_)    
+(_) _  _  _ (_) (_)        (_)           (_)(_)(_)(_)_ (_)           _  _  _ (_)  (_)        (_)(_)        (_)(_) _  _  _ (_) (_)(_)          
+(_)(_)(_)(_)(_) (_)       _(_)          _           (_)(_)         _(_)(_)(_)(_)  (_)        (_)(_)        (_)(_)(_)(_)(_)(_) (_)             
+(_)         (_) (_)_  _  (_)           (_)_  _  _  _(_)(_)_  _  _ (_)_  _  _ (_)_ (_)        (_)(_)        (_)(_)_  _  _  _   (_)             
+(_)         (_)(_)(_)(_)(_)              (_)(_)(_)(_)    (_)(_)(_)  (_)(_)(_)  (_)(_)        (_)(_)        (_)  (_)(_)(_)(_)  (_)             
+                                                                                                                                        
+                                                                                                                                        
+"
+
+$host.ui.rawui.windowsize.width = 200
+
+Import-Module ActiveDirectory | Out-Null
+Import-Module GroupPolicy | Out-Null
 
 function checkuserperm() {
 
-    Write-Host " [+] Running in Domain Admin & Powershell with Admin context :" -ForegroundColor Green -NoNewline
+    Write-Host " [+] Running the precheck :" -ForegroundColor White -NoNewline
 
     $modulechk = (Get-Module -ListAvailable -Name ActiveDirectory).Name
-    if ($modulechk -eq "ActiveDirectory") {
+    $modulechk1 = (Get-Module -ListAvailable -Name GroupPolicy).Name
+    if ($modulechk -eq "ActiveDirectory" -and $modulechk1 -eq "GroupPolicy") {
         $isModuleAvailable = $true
         Write-Host " [Module] " -ForegroundColor Green -NoNewline
     }
@@ -62,14 +93,19 @@ function checkuserperm() {
 
 
     if ($isDomAdmin -eq $true -and $isPs -eq $true -and $isModuleAvailable -eq $true) {
-        # Write-Host "[PASSED]" -ForegroundColor Green
+        # Write-Host "[PASSED]" -ForegroundColor White
     }
     else {
         # Write-Host "[FAILED]" -ForegroundColor Yellow
-        Write-Host " You Must have following pre-requisite fullfilled for this script to run:
-        1. Powershell Active Directory Module.
-        2. Run PowerShell as Admin 
-        3. User must be part of Domain Admins Group"
+        Write-Host " 
+        
+        You Must have following pre-requisite fullfilled for this script to run:
+
+                1. Powershell Active Directory and GroupPolicy Module.
+                2. Run PowerShell as Admin.
+                3. User must be part of Domain Admins Group.
+        
+        "
         Exit
     }
 
@@ -77,22 +113,22 @@ function checkuserperm() {
 
 
 Function asrep($guid) {
-    Write-Host " [+] AS-REP Query" -ForegroundColor Green
+    Write-Host " [+] AS-REP Query" -ForegroundColor White
     Get-ADUser -LDAPFilter '(&(&(&(objectCategory=person)(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304))))' | Export-Csv -NoTypeInformation asrep_$guid.csv | Out-Null
 }
 
 Function Kerberosting($guid) {
-    Write-Host " [+] Keberosting Query" -ForegroundColor Green
+    Write-Host " [+] Keberosting Query" -ForegroundColor White
     Get-ADUSer -Filter { ServicePrincipalName -ne "$null" } -Properties ServicePrincipalName | Export-Csv -NoTypeInformation kerberosting_$guid.csv | Out-Null
 }
 
 Function PasswordNeverExpires($guid) {
-    Write-Host " [+] Password Never Expires Query" -ForegroundColor Green
+    Write-Host " [+] Password Never Expires Query" -ForegroundColor White
     get-aduser -filter * -properties Name, PasswordNeverExpires | where { $_.passwordNeverExpires -eq "true" } | Export-Csv -NoTypeInformation PasswordNeverExpires_$guid.csv | Out-Null
 }
 
 Function SysvolPerm($guid) {
-    Write-Host " [+] AD Sysvol Permission Check" -ForegroundColor Green
+    Write-Host " [+] AD Sysvol Permission Check" -ForegroundColor White
     # $env:USERDOMAIN
     # Add-Content -Value "---- Sysvol with unexpected permission will be displayed below ----" -Path Sysvolperm_$guid.txt
     $permList = (Get-Acl \\$env:USERDOMAIN\sysvol).Access
@@ -123,7 +159,7 @@ Function SysvolPerm($guid) {
 }
 
 Function Netlogonperm($guid) {
-    Write-Host " [+] AD Netlogon Permission Check" -ForegroundColor Green
+    Write-Host " [+] AD Netlogon Permission Check" -ForegroundColor White
     # $env:USERDOMAIN
     # Add-Content -Value "---- Netlogon with unexpected permission will be displayed below ----" -Path Netlogonperm_$guid.txt
     $permList = (Get-Acl \\$env:USERDOMAIN\Netlogon).Access
@@ -140,7 +176,7 @@ Function Netlogonperm($guid) {
 }
 
 function unexpectedFileShareOnAD($guid) {
-    Write-Host " [+] Unexpected File Share detection on AD" -ForegroundColor Green
+    Write-Host " [+] Unexpected File Share detection on AD" -ForegroundColor White
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
     ForEach ($dc in $allDC) {
         # Write-Host $dc
@@ -162,7 +198,7 @@ function unexpectedFileShareOnAD($guid) {
 }
 
 function RootHiddendelegate($guid) {
-    Write-Host " [+] Checking Delegate access for Domain Root" -ForegroundColor Green
+    Write-Host " [+] Checking Delegate access for Domain Root" -ForegroundColor White
     $DCval = (Get-ADDomain).DistinguishedName
     $ListPerm = (Get-Acl -Path "AD:$DCval").Access
     ForEach ($perms in $ListPerm) {
@@ -176,12 +212,12 @@ function RootHiddendelegate($guid) {
 }
 
 function ServiceAcct($guid) {
-    Write-Host " [+] Fetching AD Service Account" -ForegroundColor Green  
+    Write-Host " [+] Fetching AD Service Account" -ForegroundColor White  
     Get-ADServiceAccount -Filter * -Properties PrincipalsAllowedToDelegateToAccount, PrincipalsAllowedToRetrieveManagedPassword | select DistinguishedName, Enabled, Name, SamAccountName, @{name = "PrincipalsAllowedToDelegateToAccount"; expression = { $_.PrincipalsAllowedToDelegateToAccount -join "; " } }, @{name = "PrincipalsAllowedToRetrieveManagedPassword"; expression = { $_.PrincipalsAllowedToRetrieveManagedPassword -join "; " } } | Export-Csv -NoTypeInformation -Append ServiceAcct_$guid.csv
 }
 
 function SMBNull($guid) {
-    Write-Host " [+] Anonymous AD enumeration check" -ForegroundColor Green
+    Write-Host " [+] Anonymous AD enumeration check" -ForegroundColor White
     # Add-Content -Value "----- Below list of AD allows Anonymous Access to AD ---- " -path anonymousSharesSAM_$Guid.csv
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
 
@@ -204,7 +240,7 @@ function SMBNull($guid) {
 }
 
 function GetPatchStatus($guid) {
-    Write-Host " [+] Getting last 3 Patch install details from server." -ForegroundColor Green
+    Write-Host " [+] Getting last 3 Patch install details from server." -ForegroundColor White
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
     foreach ($dc in $allDC) {
         Get-Hotfix -ComputerName $dc | Sort-Object -Property InstalledOn -Descending | Select-Object -First 3 | Export-Csv -Append -NoTypeInformation -Path GetPatchStatus_$guid.csv
@@ -212,12 +248,12 @@ function GetPatchStatus($guid) {
 }
 
 function DomainAdmins($guid) {
-    Write-Host " [+] Getting Domain Admins User lists" -ForegroundColor Green
+    Write-Host " [+] Getting Domain Admins User lists" -ForegroundColor White
     Get-ADGroupMember "Domain Admins" -Recursive | Export-Csv -Append -NoTypeInformation -Path DomainAdmins_$guid.csv
 }
 
 function LLMR_NetBIOS($guid) {
-    Write-Host " [+] Checking LLMNR, NetBIOS, MDNS status" -ForegroundColor Green
+    Write-Host " [+] Checking LLMNR, NetBIOS, MDNS status" -ForegroundColor White
     # Add-Content -Value "----- Below list of AD allows Anonymous Access to AD ---- " -path anonymousSharesSAM_$Guid.csv
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
     # Netbios
@@ -251,7 +287,7 @@ function LLMR_NetBIOS($guid) {
 }
 
 function DefaultOUUGC ($guid) {
-    Write-Host " [+] Checking user/group part of default CN=User Container" -ForegroundColor Green
+    Write-Host " [+] Checking user/group part of default CN=User Container" -ForegroundColor White
     $DomainDN = (Get-ADDomain).DistinguishedName
     $userc = (Get-ADUser -SearchBase "CN=Users,$DomainDN" -Filter *).count
     $groupc = (Get-ADGroup -SearchBase "CN=Users,$DomainDN" -Filter *).count
@@ -261,7 +297,7 @@ function DefaultOUUGC ($guid) {
 }
 
 function AntivirusStatus ($guid){
-    Write-Host " [+] Checking antivirus installation..." -ForegroundColor Green
+    Write-Host " [+] Checking antivirus installation..." -ForegroundColor White
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
     # Netbios
     Add-Content -Value "DomainController , AntivirusInstalled" -Path AntivirusStatus_$guid.csv
@@ -273,7 +309,7 @@ function AntivirusStatus ($guid){
 }
 
 function unconstraintDelegation ($guid){
-    Write-Host " [+] Unconstraint Delegation for Users and Machines..." -ForegroundColor Green
+    Write-Host " [+] Unconstraint Delegation for Users and Machines..." -ForegroundColor White
     Get-ADComputer -Filter {msDS-AllowedToDelegateTo -like "*"} -Properties msDS-AllowedToDelegateTo | Select Name, msDS-AllowedToDelegateTo | Export-Csv -NoTypeInformation -Path UnconstraintDelegation_Comp_$guid.csv
     Get-ADUser -Filter {msDS-AllowedToDelegateTo -like "*"} -Properties msDS-AllowedToDelegateTo | Select Name, msDS-AllowedToDelegateTo | Export-Csv -NoTypeInformation -Path UnconstraintDelegation_User_$guid.csv
 
@@ -282,7 +318,7 @@ function unconstraintDelegation ($guid){
 }
 
 function DCSyncAccess($guid){
-    Write-Host " [+] Checking for DCSync Access..." -ForegroundColor Green
+    Write-Host " [+] Checking for DCSync Access..." -ForegroundColor White
     $DCval = (Get-ADDomain).DistinguishedName
     $acl = Get-Acl -Path "AD:$DCval"
     
@@ -302,13 +338,14 @@ function DCSyncAccess($guid){
 }
 
 function dumpntds($guid){
-    Write-Host " [+] Checking which users have access to Dump NTDS.dit..." -ForegroundColor Green
+    Write-Host " [+] Checking which users have access to Dump NTDS.dit..." -ForegroundColor White
     Get-ADGroupMember "Backup Operators" -Recursive | Export-Csv -Append -NoTypeInformation -Path dumpntds_$guid.csv
     Get-ADGroupMember "Server Operators" -Recursive | Export-Csv -Append -NoTypeInformation -Path dumpntds_$guid.csv
     Get-ADGroupMember "Administrators" -Recursive | Export-Csv -Append -NoTypeInformation -Path dumpntds_$guid.csv
 }
 
 function GPOChangeAccess ($guid) {
+    Write-Host " [+] Checking who can modify GroupPolicy" -ForegroundColor White
     $allGPO = Get-GPO -All
     Add-Content -Value "GPOName , Trustee , Permission" -Path GPOChangeAccess_$guid.csv
     foreach($eachgpo in $allGPO){
@@ -330,12 +367,31 @@ function GPOChangeAccess ($guid) {
     }    
 }
 
+function checkAdminRename($guid) {
+    Write-Host " [+] Checking ADMINISTRATOR default account is renamed" -ForegroundColor White
+    $DomainSID = (Get-ADDomain).DomainSID.value
+    $sidval = $DomainSID + "-500"
+    $CheckName = Get-ADUser -Filter 'SID -eq $sidval'
+    $adminName = $CheckName.Name
+    if($adminName -eq "Administrator"){
+        '"Account_Name","Status"' | Out-File checkAdminRename_$guid.csv -Append
+        '"Administrator","NOT RENAMED"' | Out-File checkAdminRename_$guid.csv -Append
+    } else {
+        # Do Nothing
+    }
+}
+
+$host.ui.RawUI.WindowTitle = "AD Scanner [Binu Balan]"
 cls
 $ErrorActionPreference = "SilentlyContinue"
 $FormatEnumerationLimit = -1
 $guid = New-Guid 
-$logo
+$logoR = $logo1, $logo2, $logo3
+$DisplayLogo = Get-Random $logoR
+Write-Host $DisplayLogo -ForegroundColor (Get-Random "Green","Yellow", "White")
+
 checkuserperm
+checkAdminRename $guid
 asrep $guid
 Kerberosting $guid
 PasswordNeverExpires $guid
@@ -412,13 +468,14 @@ $addomain = (Get-ADDomainController | select Domain).Domain
 Add-Content -Value "<html>" -Path Report_$guid.html
 Add-Content -Value "<title>AD Scanner</title>" -Path Report_$guid.html
 Add-Content -Value "<H1>AD Scanner Report</H1>" -Path Report_$guid.html
-Add-Content -Value "<H2>Author     : Binu Balan</H2>" -Path Report_$guid.html
-Add-Content -Value "<H2>Version    : $version </H2>" -Path Report_$guid.html
-Add-Content -Value "<H2><i>Running Query against Domain -</B> $addomain </B></i></H2>" -Path Report_$guid.html
+Add-Content -Value "<H3>Author     : Binu Balan</H3>" -Path Report_$guid.html
+Add-Content -Value "<H3>Version    : $version </H3>" -Path Report_$guid.html
+Add-Content -Value "<H3><i>Running Query against Domain -</B> $addomain </B></i></H3>" -Path Report_$guid.html
+Add-Content -Value "<p><p>" -Path Report_$guid.html
 
 Add-Content -Value "$header" -Path Report_$guid.html
 
-
+Import-Csv checkAdminRename_$guid.csv | ConvertTo-Html -head "<h2>Default Admin Account Rename</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv asrep_$guid.csv | ConvertTo-Html -head "<h2>ASREP Roast - Password Not Required</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv Kerberosting_$guid.csv | ConvertTo-Html -head "<h2>Kerberostable Account</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv PasswordNeverExpires_$guid.csv | ConvertTo-Html -head "<h2>Password Never Expires</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
