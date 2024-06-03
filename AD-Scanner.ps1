@@ -109,6 +109,7 @@ function checkuserperm() {
         Exit
     }
 
+
 }
 
 
@@ -296,15 +297,18 @@ function DefaultOUUGC ($guid) {
     Add-Content -Value "$userc , $groupc , $contactc" -Path DefaultOUUGC_$guid.csv
 }
 
-function AntivirusStatus ($guid){
+function AntivirusStatus ($guid, $AVServiceName){
     Write-Host " [+] Checking antivirus installation..." -ForegroundColor White
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
+    $AvState = "<B>ERROR Or NOT Found</B>"
     # Netbios
-    Add-Content -Value "DomainController , AntivirusInstalled" -Path AntivirusStatus_$guid.csv
+    Add-Content -Value "DomainController , Antivirus Name , AntivirusInstalled" -Path AntivirusStatus_$guid.csv
     ForEach ($dc in $allDC) {
-        $AvName = Invoke-Command -ScriptBlock { (Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntivirusProduct | select displayname -ExpandProperty displayname) -join "," } -ComputerName $dc  # 0
+        # $AvName = Invoke-Command -ScriptBlock { (Get-CimInstance -Class Win32_Service -Filter "Name = '$AVServiceName'" -server $dc | Select-Object state).state } -ComputerName $dc  # 0
+        $AvState = (Get-CimInstance -Class Win32_Service -Filter "Name = '$AVServiceName'" -server $dc | Select-Object state).state
         # (Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntivirusProduct -ComputerName $dc | select displayname -ExpandProperty displayname) -join ","
-        Add-Content -Value "$dc , $AvName" -Path AntivirusStatus_$guid.csv
+        # write-host "AV Name - $AvNameVal |  $AvStatusVal | $AvName" -ForegroundColor Green
+        Add-Content -Value "$DC , $AVServiceName , $AvState" -Path AntivirusStatus_$guid.csv
     }
 }
 
@@ -391,6 +395,7 @@ $DisplayLogo = Get-Random $logoR
 Write-Host $DisplayLogo -ForegroundColor (Get-Random "Green","Yellow", "White")
 
 checkuserperm
+$AVServiceName = Read-host " [?] Enter the Antivirus Service Name "
 checkAdminRename $guid
 asrep $guid
 Kerberosting $guid
@@ -405,7 +410,7 @@ GetPatchStatus $guid
 DomainAdmins $guid
 LLMR_NetBIOS $guid
 DefaultOUUGC $guid
-AntivirusStatus $guid
+AntivirusStatus $guid $AVServiceName
 unconstraintDelegation $guid
 DCSyncAccess $guid
 dumpntds $guid
