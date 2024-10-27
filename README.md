@@ -8,4 +8,4 @@ This tool will perform AD Environment Scan for any misconfiguration and issues. 
 #### =============
 - Run this Script using Domain Admin Credentials.
 - Ensure Terminal is "Runas Admin" mode.
-- Access to add DC from where you are running this Script from. 
+- Recommended to execute this Script from PDC as commonly all DC's will be accessible from PDC. 
