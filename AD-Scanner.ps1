@@ -385,6 +385,23 @@ function checkAdminRename($guid) {
     }
 }
 
+function ADDCList($guid) {
+    Write-Host " [+] Listing all Domain Controllers and OU" -ForegroundColor White
+    Get-ADDomainController -Filter * | select name,computerobjectDN | Export-Csv -NoTypeInformation -Path ADDCList_$guid.csv
+}
+
+function checkPasswordPolicy($guid) {
+    Write-Host " [+] Checking Default Password Policy" -ForegroundColor White
+    Get-ADDefaultDomainPasswordPolicy | select ComplexityEnabled,LockoutDuration,LockoutObservationWindow,LockoutThreshold,MaxPasswordAge,MinPasswordAge,MinPasswordLength,PasswordHistoryCount,ReversibleEncryptionEnabled | Export-Csv -NoTypeInformation -Path checkPasswordPolicy_$guid.csv
+}
+
+function checkFSMO($guid) {
+    Write-Host " [+] Checking FSMO Roles [Domain Wide and Forest Wide]" -ForegroundColor White
+    Get-ADDomain | Select-Object InfrastructureMaster, RIDMaster, PDCEmulator  | Export-Csv -NoTypeInformation -Path checkFSMODomain_$guid.csv
+    Get-ADForest | Select-Object DomainNamingMaster, SchemaMaster  | Export-Csv -NoTypeInformation -Path checkFSMOForest_$guid.csv
+}
+
+
 $host.ui.RawUI.WindowTitle = "AD Scanner [Binu Balan]"
 cls
 $ErrorActionPreference = "SilentlyContinue"
@@ -397,6 +414,8 @@ Write-Host $DisplayLogo -ForegroundColor (Get-Random "Green","Yellow", "White")
 checkuserperm
 $AVServiceName = Read-host " [?] Enter the Antivirus Service Name "
 checkAdminRename $guid
+checkFSMO $guid
+checkPasswordPolicy $guid
 asrep $guid
 Kerberosting $guid
 PasswordNeverExpires $guid
@@ -415,6 +434,7 @@ unconstraintDelegation $guid
 DCSyncAccess $guid
 dumpntds $guid
 GPOChangeAccess $guid
+ADDCList $guid
 
 # LDAPport $guid
 # OUHiddenDelegate $guid
@@ -481,6 +501,11 @@ Add-Content -Value "<p><p>" -Path Report_$guid.html
 Add-Content -Value "$header" -Path Report_$guid.html
 
 Import-Csv checkAdminRename_$guid.csv | ConvertTo-Html -head "<h2>Default Admin Account Rename</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv checkFSMODomain_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Domain Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv checkFSMOForest_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Forest Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+
+Import-Csv checkPasswordPolicy_$guid.csv | ConvertTo-Html -head "<h2>Account Lockout and Password Policy</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+
 Import-Csv asrep_$guid.csv | ConvertTo-Html -head "<h2>ASREP Roast - Password Not Required</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv Kerberosting_$guid.csv | ConvertTo-Html -head "<h2>Kerberostable Account</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv PasswordNeverExpires_$guid.csv | ConvertTo-Html -head "<h2>Password Never Expires</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
@@ -502,6 +527,8 @@ Import-Csv TrustedforDelegation_Comp_$guid.csv | ConvertTo-Html -head "<h2>Compu
 Import-Csv DCSyncAccess_$guid.csv | ConvertTo-Html -head "<h2>DCSync Access Enabled IDs</h2><p><h3>Check if these users have excess permission as they have ObjectType value as 00000000-0000-0000-0000-000000000000<p> This could be Read All or Generic All too.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv dumpntds_$guid.csv | ConvertTo-Html -head "<h2>Users Having Acces to Dump NTDS.DIT</h2><p><h3>Members of Server Operator, Backup Operator, Administrators.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv GPOChangeAccess_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
+
+Import-Csv ADDCList_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 
 
 Add-Content -Value "</html>" -Path Report_$guid.html
