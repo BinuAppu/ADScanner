@@ -4,7 +4,7 @@
 .Purpose : To scan Active Directory for Misconfiguration
 #>
 
-$version = "1.0"
+$version = "1.1"
 $Logo1 = "
                                               
     ___    ____     _____                                 
