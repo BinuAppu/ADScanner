@@ -401,6 +401,122 @@ function checkFSMO($guid) {
     Get-ADForest | Select-Object DomainNamingMaster, SchemaMaster  | Export-Csv -NoTypeInformation -Path checkFSMOForest_$guid.csv
 }
 
+Function OID ($policy){
+    $result = switch ($policy) {
+    1.3.6.1.4.1.311.76.6.1 {"WindowsUpdate"}
+    1.3.6.1.4.1.311.10.3.25 {"WindowsThirdPartyApplicationComponent"}
+    1.3.6.1.4.1.311.10.3.6 {"WindowsSystemComponentVerification"}
+    1.3.6.1.4.1.311.10.3.23 {"WindowsTCBComponent"}
+    1.3.6.1.4.1.311.10.3.26 {"WindowsSoftwareExtensionVerification"}
+    1.3.6.1.4.1.311.76.3.1 {"WindowsStore"}
+    1.3.6.1.4.1.311.20.2.2 {"SmartCardLogon"}
+    1.3.6.1.5.5.7.3.7 {"IPsecurityuser"}
+    1.3.6.1.4.1.311.10.3.20 {"WindowsKitsComponent"}
+    1.3.6.1.4.1.311.10.3.5 {"WindowsHardwareDriverVerification"}
+    1.3.6.1.4.1.311.10.3.39 {"WindowsHardwareDriverExtendedVerification"}
+    1.3.6.1.4.1.311.10.3.5.1 {"WindowsHardwareDriverAttestedVerification"}
+    1.3.6.1.5.5.7.3.8 {"TimeStamping"}
+    1.3.6.1.4.1.311.2.6.1 {"SpcRelaxedPEMarkerCheck"}
+    1.3.6.1.4.1.311.2.6.2 {"SpcEncryptedDigestRetryCount"}
+    1.3.6.1.5.5.7.3.1 {"ServerAuthentication"}
+    1.3.6.1.5.5.7.3.4 {"SecureEmail"}
+    1.3.6.1.4.1.311.10.3.9 {"RootListSigner"}
+    1.3.6.1.4.1.311.10.3.19 {"RevokedListSigner"}
+    1.3.6.1.4.1.311.10.3.10 {"QualifiedSubordination"}
+    1.3.6.1.4.1.311.10.3.24 {"ProtectedProcessVerification"}
+    1.3.6.1.4.1.311.10.3.22 {"ProtectedProcessLightVerification"}
+    1.3.6.1.4.1.311.21.5 {"PrivateKeyArchival"}
+    1.3.6.1.4.1.311.10.3.27 {"PreviewBuildSigning"}
+    2.23.133.8.2 {"PlatformCertificate"}
+    1.3.6.1.5.5.7.3.9 {"OCSPSigning"}
+    1.3.6.1.4.1.311.10.3.1 {"MicrosoftTrustListSigning"}
+    1.3.6.1.4.1.311.76.8.1 {"MicrosoftPublisher"}
+    1.3.6.1.4.1.311.10.3.13 {"LifetimeSigning"}
+    1.3.6.1.4.1.311.64.1.1 {"DomainNameSystemDNSServerTrust"}
+    1.3.6.1.4.1.311.10.3.11 {"KeyRecovery"}
+    1.3.6.1.4.1.311.21.6 {"KeyRecoveryAgent"}
+    1.3.6.1.4.1.311.61.4.1 {"EarlyLaunchAntimalwareDriver"}
+    1.3.6.1.4.1.311.61.1.1 {"KernelModeCodeSigning"}
+    2.23.133.8.3 {"AttestationIdentityKeyCertificate"}
+    2.23.133.8.3 {"AttestationIdentityKeyCertificate"}
+    1.3.6.1.5.2.3.5 {"KDCAuthentication"}
+    1.3.6.1.4.1.311.10.3.8 {"EmbeddedWindowsSystemComponentVerification"}
+    1.3.6.1.5.5.7.3.6 {"IPsecuritytunneltermination"}
+    1.3.6.1.5.5.8.2.2 {"IPsecurityIKEintermediate"}
+    1.3.6.1.4.1.311.10.6.2 {"LicenseServerVerification"}
+    1.3.6.1.4.1.311.76.5.1 {"DynamicCodeGenerator"}
+    1.3.6.1.4.1.311.10.3.4.1 {"FileRecovery"}
+    2.23.133.8.1 {"EndorsementKeyCertificate"}
+    1.3.6.1.4.1.311.10.3.4 {"EncryptingFileSystem"}
+    1.3.6.1.4.1.311.61.5.1 {"HALExtension"}
+    1.3.6.1.5.5.7.3.5 {"IPsecurityendsystem"}
+    1.3.6.1.4.1.311.10.3.30 {"DisallowedList"}
+    1.3.6.1.4.1.311.10.3.21 {"WindowsRTVerification"}
+    1.3.6.1.4.1.311.10.3.12 {"DocumentSigning"}
+    1.3.6.1.4.1.311.80.1 {"DocumentEncryption"}
+    1.3.6.1.4.1.311.21.19 {"DirectoryServiceEmailReplication"}
+    1.3.6.1.4.1.311.10.5.1 {"DigitalRights"}
+    1.3.6.1.4.1.311.20.2.1 {"CertificateRequestAgent"}
+    1.3.6.1.4.1.311.20.1 {"CTLUsage"}
+    1.3.6.1.5.5.7.3.3 {"CodeSigning"}
+    1.3.6.1.4.1.311.10.3.2 {"MicrosoftTimeStamping"}
+    1.3.6.1.5.5.7.3.2 {"ClientAuthentication"}
+    2.5.29.37.0 {"AnyPurpose"}
+    1.3.6.1.4.1.311.64.1.1 {"DomainNameSystemDNSServerTrust"}
+
+    }
+    return $result
+
+}
+
+function CertPermissionCheck($guid){
+Write-Host " [+] Checking Certificate Permission / Misconfiguration" -ForegroundColor White
+$ConfigContext = ([ADSI]"LDAP://RootDSE").configurationNamingContext
+$ConfigContext = "CN=Certificate Templates,CN=Public Key Services,CN=Services,$ConfigContext"
+$ds = New-object System.DirectoryServices.DirectorySearcher([ADSI]"LDAP://$ConfigContext")
+$Templates = $ds.Findall().GetDirectoryEntry()
+
+Foreach($Template in $Templates){
+    # Write-Host $Template.cn -ForegroundColor Green
+    $defaultperm = "*ENTERPRISE DOMAIN CONTROLLERS*","*Enterprise Read-only Domain Controllers*","*Domain Admins*","*Domain Controllers*","*Enterprise Admins*"
+    
+    $Perms = $Template.ObjectSecurity.Access
+    # $Template | fl * >> test.txt
+
+    foreach ($perm in $perms){
+        $identity = $perm.IdentityReference
+        if($identity -like "*ENTERPRISE DOMAIN CONTROLLERS*" -or $identity -like "*Enterprise Read-only Domain Controllers*" -or $identity -like "*Domain Admins*" -or $identity -like "*Domain Controllers*"  -or $identity -like "*Enterprise Admins*" -or $identity -like "*Authenticated Users" -or $perm.ActiveDirectoryRights -eq "GenericRead" -or $identity -like "*Administrator"){
+            # Write-Host $identity
+        } else {
+
+           # Write-Host $identity -ForegroundColor Yellow
+            $pol = $Template.'msPKI-Certificate-Application-Policy'
+            $polval = ""
+            $addPol = ""
+            foreach($policy in $pol){
+                $addPol = OID $policy
+                $polval = $polval + "," + $addPol
+            }
+           #Write-Host $Template.cn "<>" $perm.ActiveDirectoryRights "<>" $perm.IdentityReference "<>" $perm.AccessControlType "<>" $perm.ObjectType "<>" $polval
+           $TempName = $Template.cn
+           foreach($EachTemplateName in $TempName){
+                $TemplateName = $EachTemplateName
+           }
+           $CertIssue = $CertIssue + @(
+           [pscustomobject]@{TemplateName=$TemplateName;ADRights=$perm.ActiveDirectoryRights;IdentityReference=$perm.IdentityReference;AccessControlType=$perm.AccessControlType;ObjectType=$perm.ObjectType;Certificate_App_Policy=$polval}
+           )
+        }
+    
+    }
+
+}
+
+    $CertIssue | Export-Csv -NoTypeInformation -Path CertPermissionCheck_$guid.csv
+
+}
+
+
+
 
 $host.ui.RawUI.WindowTitle = "AD Scanner [Binu Balan]"
 cls
@@ -435,12 +551,14 @@ DCSyncAccess $guid
 dumpntds $guid
 GPOChangeAccess $guid
 ADDCList $guid
+CertPermissionCheck $guid
 
 # LDAPport $guid
 # OUHiddenDelegate $guid
 
 function Report($guid){
     Write-Host " [+] Lets write some HTML Report..." -ForegroundColor Yellow
+    Start-Sleep -Seconds 3
     $Header = $Header = @"
     <style>
         h1 {
@@ -503,9 +621,7 @@ Add-Content -Value "$header" -Path Report_$guid.html
 Import-Csv checkAdminRename_$guid.csv | ConvertTo-Html -head "<h2>Default Admin Account Rename</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv checkFSMODomain_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Domain Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv checkFSMOForest_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Forest Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
-
 Import-Csv checkPasswordPolicy_$guid.csv | ConvertTo-Html -head "<h2>Account Lockout and Password Policy</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
-
 Import-Csv asrep_$guid.csv | ConvertTo-Html -head "<h2>ASREP Roast - Password Not Required</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv Kerberosting_$guid.csv | ConvertTo-Html -head "<h2>Kerberostable Account</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv PasswordNeverExpires_$guid.csv | ConvertTo-Html -head "<h2>Password Never Expires</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
@@ -527,10 +643,8 @@ Import-Csv TrustedforDelegation_Comp_$guid.csv | ConvertTo-Html -head "<h2>Compu
 Import-Csv DCSyncAccess_$guid.csv | ConvertTo-Html -head "<h2>DCSync Access Enabled IDs</h2><p><h3>Check if these users have excess permission as they have ObjectType value as 00000000-0000-0000-0000-000000000000<p> This could be Read All or Generic All too.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv dumpntds_$guid.csv | ConvertTo-Html -head "<h2>Users Having Acces to Dump NTDS.DIT</h2><p><h3>Members of Server Operator, Backup Operator, Administrators.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv GPOChangeAccess_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
-
 Import-Csv ADDCList_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
-
-
+Import-Csv CertPermissionCheck_$guid.csv | ConvertTo-Html -head "<h2>Certificate Template Permission / Misconfiguration</h2><p><h3>Lookout for the permission and check if its excess !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Add-Content -Value "</html>" -Path Report_$guid.html
 }
 
