@@ -114,22 +114,22 @@ function checkuserperm() {
 
 
 Function asrep($guid) {
-    Write-Host " [+] AS-REP Query" -ForegroundColor White
+    Write-Host " [+] AS-REP Query." -ForegroundColor White
     Get-ADUser -LDAPFilter '(&(&(&(objectCategory=person)(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304))))' | Export-Csv -NoTypeInformation asrep_$guid.csv | Out-Null
 }
 
 Function Kerberosting($guid) {
-    Write-Host " [+] Keberosting Query" -ForegroundColor White
+    Write-Host " [+] Keberosting Query." -ForegroundColor White
     Get-ADUSer -Filter { ServicePrincipalName -ne "$null" } -Properties ServicePrincipalName | Export-Csv -NoTypeInformation kerberosting_$guid.csv | Out-Null
 }
 
 Function PasswordNeverExpires($guid) {
-    Write-Host " [+] Password Never Expires Query" -ForegroundColor White
+    Write-Host " [+] Password Never Expires Query." -ForegroundColor White
     get-aduser -filter * -properties Name, PasswordNeverExpires | where { $_.passwordNeverExpires -eq "true" } | Export-Csv -NoTypeInformation PasswordNeverExpires_$guid.csv | Out-Null
 }
 
 Function SysvolPerm($guid) {
-    Write-Host " [+] AD Sysvol Permission Check" -ForegroundColor White
+    Write-Host " [+] AD Sysvol Permission Check." -ForegroundColor White
     # $env:USERDOMAIN
     # Add-Content -Value "---- Sysvol with unexpected permission will be displayed below ----" -Path Sysvolperm_$guid.txt
     $permList = (Get-Acl \\$env:USERDOMAIN\sysvol).Access
@@ -160,7 +160,7 @@ Function SysvolPerm($guid) {
 }
 
 Function Netlogonperm($guid) {
-    Write-Host " [+] AD Netlogon Permission Check" -ForegroundColor White
+    Write-Host " [+] AD Netlogon Permission Check." -ForegroundColor White
     # $env:USERDOMAIN
     # Add-Content -Value "---- Netlogon with unexpected permission will be displayed below ----" -Path Netlogonperm_$guid.txt
     $permList = (Get-Acl \\$env:USERDOMAIN\Netlogon).Access
@@ -177,7 +177,7 @@ Function Netlogonperm($guid) {
 }
 
 function unexpectedFileShareOnAD($guid) {
-    Write-Host " [+] Unexpected File Share detection on AD" -ForegroundColor White
+    Write-Host " [+] Unexpected File Share detection on AD." -ForegroundColor White
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
     ForEach ($dc in $allDC) {
         # Write-Host $dc
@@ -199,7 +199,7 @@ function unexpectedFileShareOnAD($guid) {
 }
 
 function RootHiddendelegate($guid) {
-    Write-Host " [+] Checking Delegate access for Domain Root" -ForegroundColor White
+    Write-Host " [+] Checking Delegate access for Domain Root." -ForegroundColor White
     $DCval = (Get-ADDomain).DistinguishedName
     $ListPerm = (Get-Acl -Path "AD:$DCval").Access
     ForEach ($perms in $ListPerm) {
@@ -213,12 +213,12 @@ function RootHiddendelegate($guid) {
 }
 
 function ServiceAcct($guid) {
-    Write-Host " [+] Fetching AD Service Account" -ForegroundColor White  
+    Write-Host " [+] Fetching AD Service Account." -ForegroundColor White  
     Get-ADServiceAccount -Filter * -Properties PrincipalsAllowedToDelegateToAccount, PrincipalsAllowedToRetrieveManagedPassword | select DistinguishedName, Enabled, Name, SamAccountName, @{name = "PrincipalsAllowedToDelegateToAccount"; expression = { $_.PrincipalsAllowedToDelegateToAccount -join "; " } }, @{name = "PrincipalsAllowedToRetrieveManagedPassword"; expression = { $_.PrincipalsAllowedToRetrieveManagedPassword -join "; " } } | Export-Csv -NoTypeInformation -Append ServiceAcct_$guid.csv
 }
 
 function SMBNull($guid) {
-    Write-Host " [+] Anonymous AD enumeration check" -ForegroundColor White
+    Write-Host " [+] Anonymous AD enumeration check." -ForegroundColor White
     # Add-Content -Value "----- Below list of AD allows Anonymous Access to AD ---- " -path anonymousSharesSAM_$Guid.csv
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
 
@@ -249,12 +249,12 @@ function GetPatchStatus($guid) {
 }
 
 function DomainAdmins($guid) {
-    Write-Host " [+] Getting Domain Admins User lists" -ForegroundColor White
+    Write-Host " [+] Getting Domain Admins User lists." -ForegroundColor White
     Get-ADGroupMember "Domain Admins" -Recursive | Export-Csv -Append -NoTypeInformation -Path DomainAdmins_$guid.csv
 }
 
 function LLMR_NetBIOS($guid) {
-    Write-Host " [+] Checking LLMNR, NetBIOS, MDNS status" -ForegroundColor White
+    Write-Host " [+] Checking LLMNR, NetBIOS, MDNS status." -ForegroundColor White
     # Add-Content -Value "----- Below list of AD allows Anonymous Access to AD ---- " -path anonymousSharesSAM_$Guid.csv
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
     # Netbios
@@ -288,7 +288,7 @@ function LLMR_NetBIOS($guid) {
 }
 
 function DefaultOUUGC ($guid) {
-    Write-Host " [+] Checking user/group part of default CN=User Container" -ForegroundColor White
+    Write-Host " [+] Checking user/group part of default CN=User Container." -ForegroundColor White
     $DomainDN = (Get-ADDomain).DistinguishedName
     $userc = (Get-ADUser -SearchBase "CN=Users,$DomainDN" -Filter *).count
     $groupc = (Get-ADGroup -SearchBase "CN=Users,$DomainDN" -Filter *).count
@@ -298,7 +298,7 @@ function DefaultOUUGC ($guid) {
 }
 
 function AntivirusStatus ($guid, $AVServiceName){
-    Write-Host " [+] Checking antivirus installation..." -ForegroundColor White
+    Write-Host " [+] Checking antivirus installation." -ForegroundColor White
     $allDC = ((Get-ADDomain).ReplicaDirectoryServers)
     $AvState = "<B>ERROR Or NOT Found</B>"
     # Netbios
@@ -313,16 +313,16 @@ function AntivirusStatus ($guid, $AVServiceName){
 }
 
 function unconstraintDelegation ($guid){
-    Write-Host " [+] Unconstraint Delegation for Users and Machines..." -ForegroundColor White
-    Get-ADComputer -Filter {msDS-AllowedToDelegateTo -like "*"} -Properties msDS-AllowedToDelegateTo | Select Name, msDS-AllowedToDelegateTo | Export-Csv -NoTypeInformation -Path UnconstraintDelegation_Comp_$guid.csv
-    Get-ADUser -Filter {msDS-AllowedToDelegateTo -like "*"} -Properties msDS-AllowedToDelegateTo | Select Name, msDS-AllowedToDelegateTo | Export-Csv -NoTypeInformation -Path UnconstraintDelegation_User_$guid.csv
+    Write-Host " [+] Unconstraint Delegation for Users and Machines." -ForegroundColor White
+    Get-ADComputer -Filter {msDS-AllowedToDelegateTo -like "*"} -Properties msDS-AllowedToDelegateTo, userAccountControl | Select Name, msDS-AllowedToDelegateTo, userAccountControl | Export-Csv -NoTypeInformation -Path UnconstraintDelegation_Comp_$guid.csv
+    Get-ADUser -Filter {msDS-AllowedToDelegateTo -like "*"} -Properties msDS-AllowedToDelegateTo, userAccountControl | Select Name, msDS-AllowedToDelegateTo, userAccountControl | Export-Csv -NoTypeInformation -Path UnconstraintDelegation_User_$guid.csv
 
-    Get-ADuser -Filter {TrustedForDelegation -eq $true} -Properties trustedfordelegation,serviceprincipalname,description | select SamAccountName,UserPrincipalName,TrustedForDelegation | Export-Csv -NoTypeInformation -Path TrustedforDelegation_User_$guid.csv
-    Get-ADComputer -Filter {TrustedForDelegation -eq $true} -Properties trustedfordelegation,serviceprincipalname,description | select SamAccountName,UserPrincipalName,TrustedForDelegation | Export-Csv -NoTypeInformation -Path TrustedforDelegation_Comp_$guid.csv
+    Get-ADuser -Filter {TrustedForDelegation -eq $true} -Properties trustedfordelegation,serviceprincipalname,description, userAccountControl | select SamAccountName,UserPrincipalName,TrustedForDelegation, userAccountControl | Export-Csv -NoTypeInformation -Path TrustedforDelegation_User_$guid.csv
+    Get-ADComputer -Filter {TrustedForDelegation -eq $true} -Properties trustedfordelegation,serviceprincipalname,description, userAccountControl | select SamAccountName,UserPrincipalName,TrustedForDelegation, userAccountControl | Export-Csv -NoTypeInformation -Path TrustedforDelegation_Comp_$guid.csv
 }
 
 function DCSyncAccess($guid){
-    Write-Host " [+] Checking for DCSync Access..." -ForegroundColor White
+    Write-Host " [+] Checking for DCSync Access." -ForegroundColor White
     $DCval = (Get-ADDomain).DistinguishedName
     $acl = Get-Acl -Path "AD:$DCval"
     
@@ -342,7 +342,7 @@ function DCSyncAccess($guid){
 }
 
 function dumpntds($guid){
-    Write-Host " [+] Checking which users have access to Dump NTDS.dit..." -ForegroundColor White
+    Write-Host " [+] Checking which users have access to Dump NTDS.dit." -ForegroundColor White
     Get-ADGroupMember "Backup Operators" -Recursive | Export-Csv -Append -NoTypeInformation -Path dumpntds_$guid.csv
     Get-ADGroupMember "Server Operators" -Recursive | Export-Csv -Append -NoTypeInformation -Path dumpntds_$guid.csv
     Get-ADGroupMember "Administrators" -Recursive | Export-Csv -Append -NoTypeInformation -Path dumpntds_$guid.csv
@@ -372,7 +372,7 @@ function GPOChangeAccess ($guid) {
 }
 
 function checkAdminRename($guid) {
-    Write-Host " [+] Checking ADMINISTRATOR default account is renamed" -ForegroundColor White
+    Write-Host " [+] Checking ADMINISTRATOR default account is renamed." -ForegroundColor White
     $DomainSID = (Get-ADDomain).DomainSID.value
     $sidval = $DomainSID + "-500"
     $CheckName = Get-ADUser -Filter 'SID -eq $sidval'
@@ -386,17 +386,17 @@ function checkAdminRename($guid) {
 }
 
 function ADDCList($guid) {
-    Write-Host " [+] Listing all Domain Controllers and OU" -ForegroundColor White
+    Write-Host " [+] Listing all Domain Controllers and OU." -ForegroundColor White
     Get-ADDomainController -Filter * | select name,computerobjectDN | Export-Csv -NoTypeInformation -Path ADDCList_$guid.csv
 }
 
 function checkPasswordPolicy($guid) {
-    Write-Host " [+] Checking Default Password Policy" -ForegroundColor White
+    Write-Host " [+] Checking Default Password Policy." -ForegroundColor White
     Get-ADDefaultDomainPasswordPolicy | select ComplexityEnabled,LockoutDuration,LockoutObservationWindow,LockoutThreshold,MaxPasswordAge,MinPasswordAge,MinPasswordLength,PasswordHistoryCount,ReversibleEncryptionEnabled | Export-Csv -NoTypeInformation -Path checkPasswordPolicy_$guid.csv
 }
 
 function checkFSMO($guid) {
-    Write-Host " [+] Checking FSMO Roles [Domain Wide and Forest Wide]" -ForegroundColor White
+    Write-Host " [+] Checking FSMO Roles [Domain Wide and Forest Wide]." -ForegroundColor White
     Get-ADDomain | Select-Object InfrastructureMaster, RIDMaster, PDCEmulator  | Export-Csv -NoTypeInformation -Path checkFSMODomain_$guid.csv
     Get-ADForest | Select-Object DomainNamingMaster, SchemaMaster  | Export-Csv -NoTypeInformation -Path checkFSMOForest_$guid.csv
 }
@@ -470,7 +470,7 @@ Function OID ($policy){
 }
 
 function CertPermissionCheck($guid){
-Write-Host " [+] Checking Certificate Permission / Misconfiguration" -ForegroundColor White
+Write-Host " [+] Checking Certificate Permission / Misconfiguration." -ForegroundColor White
 $ConfigContext = ([ADSI]"LDAP://RootDSE").configurationNamingContext
 $ConfigContext = "CN=Certificate Templates,CN=Public Key Services,CN=Services,$ConfigContext"
 $ds = New-object System.DirectoryServices.DirectorySearcher([ADSI]"LDAP://$ConfigContext")
@@ -512,6 +512,15 @@ Foreach($Template in $Templates){
 }
 
     $CertIssue | Export-Csv -NoTypeInformation -Path CertPermissionCheck_$guid.csv
+
+# Reference : https://specterops.io/wp-content/uploads/sites/3/2022/06/Certified_Pre-Owned.pdf
+
+    Get-ADObject -LDAPFilter '(&(objectclass=pkicertificatetemplate)(!(mspki-enrollment-flag:1.2.840.113556.1.4.804:=2))(|(mspki-ra-signature=0)(!(mspki-ra-signature=*)))(|(pkiextendedkeyusage=1.3.6.1.4.1.311.20.2.2)(pkiextendedkeyusage=1.3.6.1.5.5.7.3.2) (pkiextendedkeyusage=1.3.6.1.5.2.3.4))(mspki-certificate-name-flag:1.2.840.113556.1.4.804:=1))' -SearchBase "$ConfigContext" | Export-Csv -NoTypeInformation -path ESC1_$guid.csv
+
+    # Get-ADObject -LDAPFilter '(&(objectclass=pkicertificatetemplate)(!(mspki-enrollment-flag:1.2.840.113556.1.4.804:=2))(|(mspki-ra-signature=0)(!(mspki-ra-signature=*)))(|(pkiextendedkeyusage=1.3.6.1.4.1.311.20.2.2)(pkiextendedkeyusage=1.3.6.1.5.5.7.3.2)(pkiextendedkeyusage=1.3.6.1.5.2.3.4)(pkiextendedkeyusage=2.5.29.37.0)(!(pkiextendedkeyusage=*)))(mspki-certificate-name-flag:1.2.840.113556.1.4.804:=1))' -SearchBase "$ConfigContext" | Export-Csv -NoTypeInformation -path ESC1_$guid.csv
+
+    Get-ADObject -LDAPFilter '(&(objectclass=pkicertificatetemplate)(!(mspki-enrollment-flag:1.2.840.113556.1.4.804:=2))(|(mspki-ra-signature=0)(!(mspki-ra-signature=*)))(|(pkiext
+endedkeyusage=2.5.29.37.0)(!(pkiextendedkeyusage=*))))' -SearchBase "$ConfigContext" | Export-Csv -NoTypeInformation -path ESC2_$guid.csv
 
 }
 
@@ -557,7 +566,7 @@ CertPermissionCheck $guid
 # OUHiddenDelegate $guid
 
 function Report($guid){
-    Write-Host " [+] Lets write some HTML Report..." -ForegroundColor Yellow
+    Write-Host " [+] Lets write some HTML Report." -ForegroundColor Yellow
     Start-Sleep -Seconds 3
     $Header = $Header = @"
     <style>
@@ -637,14 +646,17 @@ Import-Csv LLMR_NetBIOS_$guid.csv | ConvertTo-Html -head "<h2>LLMNR / NETBIOS / 
 Import-Csv DefaultOUUGC_$guid.csv | ConvertTo-Html -head "<h2>Default Users under Root OU - cn=users </h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv AntivirusStatus_$guid.csv | ConvertTo-Html -head "<h2>Antivirus Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv UnconstraintDelegation_User_$guid.csv | ConvertTo-Html -head "<h2>Unconstraint User Delegation</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
-Import-Csv UnconstraintDelegation_Comp_$guid.csv | ConvertTo-Html -head "<h2>Unconstraint Computer Delegation</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv UnconstraintDelegation_Comp_$guid.csv | ConvertTo-Html -head "<h2>Unconstraint Computer Delegation</h2><p><h3>Check if only HyperV servers are appearing.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv TrustedforDelegation_user_$guid.csv | ConvertTo-Html -head "<h2>User Trusted for Delegation</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
-Import-Csv TrustedforDelegation_Comp_$guid.csv | ConvertTo-Html -head "<h2>Computer Trusted for Delegation</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv TrustedforDelegation_Comp_$guid.csv | ConvertTo-Html -head "<h2>Computer Trusted for Delegation</h2><p><h3>Check if only AD server is appearing.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv DCSyncAccess_$guid.csv | ConvertTo-Html -head "<h2>DCSync Access Enabled IDs</h2><p><h3>Check if these users have excess permission as they have ObjectType value as 00000000-0000-0000-0000-000000000000<p> This could be Read All or Generic All too.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv dumpntds_$guid.csv | ConvertTo-Html -head "<h2>Users Having Acces to Dump NTDS.DIT</h2><p><h3>Members of Server Operator, Backup Operator, Administrators.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv GPOChangeAccess_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv ADDCList_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 Import-Csv CertPermissionCheck_$guid.csv | ConvertTo-Html -head "<h2>Certificate Template Permission / Misconfiguration</h2><p><h3>Lookout for the permission and check if its excess !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv ESC1_$guid.csv | ConvertTo-Html -head "<h2>Certificate - ESC1 Vulnerability</h2><p><h3>Listed templates have been identified to have ESC1 Vulerability !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
+Import-Csv ESC2_$guid.csv | ConvertTo-Html -head "<h2>Certificate - ESC2 Vulnerability</h2><p><h3>Listed templates have been identified to have ESC2 Vulerability !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
+
 Add-Content -Value "</html>" -Path Report_$guid.html
 }
 
