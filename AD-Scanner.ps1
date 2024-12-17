@@ -4,7 +4,7 @@
 .Purpose : To scan Active Directory for Misconfiguration
 #>
 
-$version = "1.1"
+$version = "1.2"
 $Logo1 = "
                                               
     ___    ____     _____                                 
@@ -551,7 +551,20 @@ endedkeyusage=2.5.29.37.0)(!(pkiextendedkeyusage=*))))' -SearchBase "$ConfigCont
 
 }
 
-
+function checkKRBTGTPass($guid) {
+    Write-Host " [+] Checking if KRBTGT Password is last set greater than - 180 Days." -ForegroundColor White
+    # KRB stands for Kerberos and TGT is Ticket Granting Ticket
+    # https://techcommunity.microsoft.com/blog/coreinfrastructureandsecurityblog/faqs-from-the-field-on-krbtgt-reset/2367838
+    $krbpass = Get-ADUser krbtgt -Properties PasswordLastSet
+    $currDate = Get-Date
+    $timeDiff = New-TimeSpan -Start $krbpass.PasswordLastSet -End $currDate
+    #v Write-Host "TimeDiff $timeDiff"
+    $TimeDays = $timeDiff.Days
+    if ($TimeDays -gt 30) {
+        Add-Content -Value "AccountName , Password Last Set" -Path checkKRBTGTPass_$guid.csv
+        Add-Content -Value "KRBTGT , $TimeDays" -Path checkKRBTGTPass_$guid.csv
+    }
+}
 
 
 $host.ui.RawUI.WindowTitle = "AD Scanner [Binu Balan]"
@@ -567,6 +580,7 @@ checkuserperm
 $AVServiceName = Read-host " [?] Enter the Antivirus Service Name "
 checkAdminRename $guid
 checkGuestRename $guid
+checkKRBTGTPass $guid
 checkFSMO $guid
 checkPasswordPolicy $guid
 asrep $guid
@@ -589,6 +603,7 @@ dumpntds $guid
 GPOChangeAccess $guid
 ADDCList $guid
 CertPermissionCheck $guid
+
 
 # LDAPport $guid
 # OUHiddenDelegate $guid
@@ -657,7 +672,7 @@ function Report($guid) {
 
     Import-Csv checkAdminRename_$guid.csv | ConvertTo-Html -head "<h2>Default Admin Account Rename and Active Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkGuestRename_$guid.csv | ConvertTo-Html -head "<h2>Default Guest Account Rename and Active Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
-       
+    Import-Csv checkKRBTGTPass_$guid.csv | ConvertTo-Html -head "<h2>KRBTGT - Is Pssword last set > 30 Days</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkFSMODomain_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Domain Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkFSMOForest_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Forest Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkPasswordPolicy_$guid.csv | ConvertTo-Html -head "<h2>Account Lockout and Password Policy</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
