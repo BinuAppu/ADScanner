@@ -235,7 +235,7 @@ function SMBNull($guid) {
             # Add-Content -Value "----- Below list of AD allows Anonymous Access to AD ---- " -path anonymousSharesSAM_$Guid.txt
         }
         else {
-            if($smbnull -eq 0){
+            if ($smbnull -eq 0) {
                 Add-Content -Value "DomainController , restrictanonymous_Expected_1, restrictanonymoussam_Expected_1, everyoneincludesanonymous_Expected_0, restrictnullsessaccess_Expected_1" -path anonymousSharesSAM_$Guid.csv
             }
             $smbnull = 1
@@ -386,12 +386,12 @@ function checkAdminRename($guid) {
     $CheckName = Get-ADUser -Filter 'SID -eq $sidval'
     $adminName = $CheckName.Name
     $actStatus = $CheckName.Enabled
-    if ($adminName -eq "Administrator" -or $actStatus -eq "Enabled") {
-        '"Account_Name","Rename_Status","ActiveStatus"' | Out-File checkAdminRename_$guid.csv -Append
-         "$adminName , NOT RENAMED , $actStatus" | Out-File checkAdminRename_$guid.csv -Append
+    if ($adminName -ne "Administrator" -and $actStatus -ne "Enabled") {
+        # Do Nothing
     }
     else {
-        # Do Nothing
+        '"Account_Name","Rename_Status","ActiveStatus"' | Out-File checkAdminRename_$guid.csv -Append
+        "$adminName , NOT RENAMED , $actStatus" | Out-File checkAdminRename_$guid.csv -Append
     }
 }
 
@@ -402,12 +402,12 @@ function checkGuestRename($guid) {
     $CheckName = Get-ADUser -Filter 'SID -eq $sidval'
     $GuestName = $CheckName.Name
     $actvStatus = $CheckName.Enabled
-    if ($GuestName -eq "Guest" -or $actStatus -eq "Enabled") {
-        '"Account_Name","Rename_Status","ActiveStatus"' | Out-File checkGuestRename_$guid.csv -Append
-        "$GuestName , NOT RENAMED , $actvStatus" | Out-File checkGuestRename_$guid.csv -Append
+    if ($GuestName -ne "Guest" -and $actvStatus -ne "Enabled") {
+        # Do Nothing
     }
     else {
-        # Do Nothing
+        '"Account_Name","Rename_Status","ActiveStatus"' | Out-File checkGuestRename_$guid.csv -Append
+        "$GuestName , NOT RENAMED , $actvStatus" | Out-File checkGuestRename_$guid.csv -Append
     }
 }
 
