@@ -570,24 +570,25 @@ function lmntlmauthlevel($guid){
     Write-host " [+] Checking LM and NTLM Authentication Level." -ForegroundColor White
     $error.clear()
     $query = (Get-ItemProperty "HKLM:\System\CurrentControlSet\Control\Lsa" -Name LmCompatibilityLevel).LmCompatibilityLevel
-    Add-Content -Value "LAN Manager authentication level" -path lmnltmauthlevel_$guid.csv
+    Add-Content -Value "Checked_On_Server , LAN_Manager_authentication_level" -path lmntlmauthlevel_$guid.csv
+    $hostN = $env:COMPUTERNAME
     if($query -eq $null -or $Error){
-        Add-Content -Value "Value not found - Falling back to default" -path lmnltmauthlevel_$guid.csv
+        Add-Content -Value "$hostN , Value not found - Falling back to default" -path lmntlmauthlevel_$guid.csv
     } else {
         if($query -eq 0){
-            Add-Content -Value "Send LM & NTLM responses" -path lmnltmauthlevel_$guid.csv
+            Add-Content -Value "$hostN , Send LM & NTLM responses" -path lmntlmauthlevel_$guid.csv
         } elseif ($query -eq 1) {
-            Add-Content -Value "Send LM & NTLM - use NTLMv2 session security if negotiated" -path lmnltmauthlevel_$guid.csv
+            Add-Content -Value "$hostN , Send LM & NTLM - use NTLMv2 session security if negotiated" -path lmntlmauthlevel_$guid.csv
         } elseif ($query -eq 2) {
-            Add-Content -Value "Send NTLM responses only" -path lmnltmauthlevel_$guid.csv
+            Add-Content -Value "$hostN, Send NTLM responses only" -path lmntlmauthlevel_$guid.csv
         } elseif ($query -eq 3) {
-            Add-Content -Value "Send NTLMv2 responses only" -path lmnltmauthlevel_$guid.csv
+            Add-Content -Value "$hostN , Send NTLMv2 responses only" -path lmntlmauthlevel_$guid.csv
         } elseif ($query -eq 4) {
-            Add-Content -Value "Send NTLMv2 responses only. Refuse LM" -path lmnltmauthlevel_$guid.csv
+            Add-Content -Value "$hostN , Send NTLMv2 responses only. Refuse LM" -path lmntlmauthlevel_$guid.csv
         } elseif ($query -eq 5) {
-            Add-Content -Value "Send NTLMv2 responses only. Refuse LM & NTLM" -path lmnltmauthlevel_$guid.csv
+            Add-Content -Value "$hostN , Send NTLMv2 responses only. Refuse LM & NTLM" -path lmntlmauthlevel_$guid.csv
         } else {
-            Add-Content -Value "Value not found - Falling back to default" -path lmnltmauthlevel_$guid.csv
+            Add-Content -Value "$hostN , Value not found - Falling back to default" -path lmntlmauthlevel_$guid.csv
         } 
     }
 }
@@ -598,14 +599,14 @@ function checksmbsigning($guid){
     $LanmanServer = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name "RequireSecuritySignature").RequireSecuritySignature
     $LanmanWorkstation = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" -Name "RequireSecuritySignature").RequireSecuritySignature
     if ($LanmanServer -eq 1){
-        $lms = "LanmanServer , SMB Signing is Enabled"
+        $lms = "LanmanServer - SMB Signing is Enabled"
     } else {
-        $lms = "LanmanServer , SMB Signing is Disabled"
+        $lms = "LanmanServer - SMB Signing is Disabled"
     }
     if ($LanmanWorkstation -eq 1){
-        $lmw = "LanmanWorkstation , SMB Signing is Enabled"
+        $lmw = "LanmanWorkstation - SMB Signing is Enabled"
     } else {
-        $lmw = "LanmanWorkstation , SMB Signing is Disabled"
+        $lmw = "LanmanWorkstation - SMB Signing is Disabled"
     }
 
     Add-Content -Value "LanmanServer , LanmanWorkstation" -path checksmbsigning_$guid.csv
@@ -622,8 +623,9 @@ function ldapsigning($guid){
     } else {
         $ldap = "LDAP Signing is Disabled"
     }
-    Add-Content -Value "LDAP Signing" -path ldapsigning_$guid.csv
-    Add-Content -Value "$ldap" -path ldapsigning_$guid.csv
+    $hostN = $env:COMPUTERNAME
+    Add-Content -Value "Checked_On_Server , LDAP_Signing" -path ldapsigning_$guid.csv
+    Add-Content -Value "$hostN , $ldap" -path ldapsigning_$guid.csv
 }
 
 
