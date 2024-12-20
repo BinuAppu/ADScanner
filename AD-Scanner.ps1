@@ -566,6 +566,66 @@ function checkKRBTGTPass($guid) {
     }
 }
 
+function lmntlmauthlevel($guid){
+    Write-host " [+] Checking LM and NTLM Authentication Level." -ForegroundColor White
+    $error.clear()
+    $query = (Get-ItemProperty "HKLM:\System\CurrentControlSet\Control\Lsa" -Name LmCompatibilityLevel).LmCompatibilityLevel
+    Add-Content -Value "LAN Manager authentication level" -path lmnltmauthlevel_$guid.csv
+    if($query -eq $null -or $Error){
+        Add-Content -Value "Value not found - Falling back to default" -path lmnltmauthlevel_$guid.csv
+    } else {
+        if($query -eq 0){
+            Add-Content -Value "Send LM & NTLM responses" -path lmnltmauthlevel_$guid.csv
+        } elseif ($query -eq 1) {
+            Add-Content -Value "Send LM & NTLM - use NTLMv2 session security if negotiated" -path lmnltmauthlevel_$guid.csv
+        } elseif ($query -eq 2) {
+            Add-Content -Value "Send NTLM responses only" -path lmnltmauthlevel_$guid.csv
+        } elseif ($query -eq 3) {
+            Add-Content -Value "Send NTLMv2 responses only" -path lmnltmauthlevel_$guid.csv
+        } elseif ($query -eq 4) {
+            Add-Content -Value "Send NTLMv2 responses only. Refuse LM" -path lmnltmauthlevel_$guid.csv
+        } elseif ($query -eq 5) {
+            Add-Content -Value "Send NTLMv2 responses only. Refuse LM & NTLM" -path lmnltmauthlevel_$guid.csv
+        } else {
+            Add-Content -Value "Value not found - Falling back to default" -path lmnltmauthlevel_$guid.csv
+        } 
+    }
+}
+
+function checksmbsigning($guid){
+    # Ref : https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/overview-server-message-block-signing
+    Write-host " [+] Checking SMB Signing Status." -ForegroundColor White
+    $LanmanServer = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name "RequireSecuritySignature").RequireSecuritySignature
+    $LanmanWorkstation = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" -Name "RequireSecuritySignature").RequireSecuritySignature
+    if ($LanmanServer -eq 1){
+        $lms = "LanmanServer , SMB Signing is Enabled"
+    } else {
+        $lms = "LanmanServer , SMB Signing is Disabled"
+    }
+    if ($LanmanWorkstation -eq 1){
+        $lmw = "LanmanWorkstation , SMB Signing is Enabled"
+    } else {
+        $lmw = "LanmanWorkstation , SMB Signing is Disabled"
+    }
+
+    Add-Content -Value "LanmanServer , LanmanWorkstation" -path $checksmbsigning_$guid.csv
+    Add-Content -Value "$lms , $lmw" -path $checksmbsigning_$guid.csv 
+
+}
+
+function ldapsigning($guid){
+    # Ref : https://support.microsoft.com/en-us/topic/2020-2023-and-2024-ldap-channel-binding-and-ldap-signing-requirements-for-windows-kb4520412-ef185fb8-00f7-167d-744c-f299a66fc00a
+    Write-host " [+] Checking LDAP Signing Status." -ForegroundColor White
+    $ldap = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\NTDS\Parameters" -Name "LDAPServerIntegrity").LDAPServerIntegrity
+    if ($ldap -eq 1){
+        $ldap = "LDAP Signing is Enabled"
+    } else {
+        $ldap = "LDAP Signing is Disabled"
+    }
+    Add-Content -Value "LDAP Signing" -path $ldapsigning_$guid.csv
+    Add-Content -Value "$ldap" -path $ldapsigning_$guid.csv
+}
+
 
 $host.ui.RawUI.WindowTitle = "AD Scanner [Binu Balan]"
 cls
@@ -580,6 +640,9 @@ checkuserperm
 $AVServiceName = Read-host " [?] Enter the Antivirus Service Name "
 checkAdminRename $guid
 checkGuestRename $guid
+lmntlmauthlevel $guid
+checksmbsigning $guid
+ldapsigning $guid
 checkKRBTGTPass $guid
 checkFSMO $guid
 checkPasswordPolicy $guid
@@ -673,6 +736,9 @@ function Report($guid) {
     Import-Csv checkAdminRename_$guid.csv | ConvertTo-Html -head "<h2>Default Admin Account Rename and Active Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkGuestRename_$guid.csv | ConvertTo-Html -head "<h2>Default Guest Account Rename and Active Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkKRBTGTPass_$guid.csv | ConvertTo-Html -head "<h2>KRBTGT - Is Pssword last set > 30 Days</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+    Import-Csv lmntlmauthlevel_$guid.csv | ConvertTo-Html -head "<h2>LAN Manager authentication level</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+    Import-Csv checksmbsigning_$guid.csv | ConvertTo-Html -head "<h2>SMB Signing Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+    Import-Csv $ldapsigning_$guid.csv | ConvertTo-Html -head "<h2>LDAP Signing Requirement</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkFSMODomain_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Domain Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkFSMOForest_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Forest Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkPasswordPolicy_$guid.csv | ConvertTo-Html -head "<h2>Account Lockout and Password Policy</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
