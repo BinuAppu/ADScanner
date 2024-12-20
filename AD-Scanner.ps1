@@ -608,8 +608,8 @@ function checksmbsigning($guid){
         $lmw = "LanmanWorkstation , SMB Signing is Disabled"
     }
 
-    Add-Content -Value "LanmanServer , LanmanWorkstation" -path $checksmbsigning_$guid.csv
-    Add-Content -Value "$lms , $lmw" -path $checksmbsigning_$guid.csv 
+    Add-Content -Value "LanmanServer , LanmanWorkstation" -path checksmbsigning_$guid.csv
+    Add-Content -Value "$lms , $lmw" -path checksmbsigning_$guid.csv 
 
 }
 
@@ -622,8 +622,8 @@ function ldapsigning($guid){
     } else {
         $ldap = "LDAP Signing is Disabled"
     }
-    Add-Content -Value "LDAP Signing" -path $ldapsigning_$guid.csv
-    Add-Content -Value "$ldap" -path $ldapsigning_$guid.csv
+    Add-Content -Value "LDAP Signing" -path ldapsigning_$guid.csv
+    Add-Content -Value "$ldap" -path ldapsigning_$guid.csv
 }
 
 
@@ -738,7 +738,7 @@ function Report($guid) {
     Import-Csv checkKRBTGTPass_$guid.csv | ConvertTo-Html -head "<h2>KRBTGT - Is Pssword last set > 30 Days</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv lmntlmauthlevel_$guid.csv | ConvertTo-Html -head "<h2>LAN Manager authentication level</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checksmbsigning_$guid.csv | ConvertTo-Html -head "<h2>SMB Signing Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
-    Import-Csv $ldapsigning_$guid.csv | ConvertTo-Html -head "<h2>LDAP Signing Requirement</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+    Import-Csv ldapsigning_$guid.csv | ConvertTo-Html -head "<h2>LDAP Signing Requirement</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkFSMODomain_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Domain Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkFSMOForest_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Forest Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkPasswordPolicy_$guid.csv | ConvertTo-Html -head "<h2>Account Lockout and Password Policy</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
