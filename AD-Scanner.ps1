@@ -710,3 +710,7 @@ Report $guid
 $ErrorActionPreference = "Continue"
 
 start .\Report_$guid.html
+
+# clear memory
+[System.GC]::Collect()
+Clear-Variable -Name * -ErrorAction SilentlyContinue
