@@ -771,6 +771,84 @@ function Report($guid) {
     Import-Csv ESC2_$guid.csv | ConvertTo-Html -head "<h2>Certificate - ESC2 Vulnerability</h2><p><h3>Listed templates have been identified to have ESC2 Vulerability !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
 
     Add-Content -Value "</html>" -Path Report_$guid.html
+
+    (Import-Csv checkAdminRename_$guid.csv | foreach($_){$aa++}) 
+    (Import-Csv checkGuestRename_$guid.csv | foreach($_){$ab++}) 
+    (Import-Csv checkKRBTGTPass_$guid.csv | foreach($_){$ac++}) 
+    (Import-Csv lmntlmauthlevel_$guid.csv | foreach($_){$ad++}) 
+    (Import-Csv checksmbsigning_$guid.csv | foreach($_){$ae++}) 
+    (Import-Csv ldapsigning_$guid.csv | foreach($_){$af++}) 
+    (Import-Csv checkFSMODomain_$guid.csv | foreach($_){$ag++}) 
+    (Import-Csv checkFSMOForest_$guid.csv | foreach($_){$ah++}) 
+    (Import-Csv checkPasswordPolicy_$guid.csv | foreach($_){$ai++}) 
+    (Import-Csv asrep_$guid.csv | foreach($_){$aj++}) 
+    (Import-Csv Kerberosting_$guid.csv | foreach($_){$ak++}) 
+    (Import-Csv PasswordNeverExpires_$guid.csv | foreach($_){$al++}) 
+    (Import-Csv SysvolPerm_$guid.csv | foreach($_){$am++}) 
+    (Import-Csv unexpectedFileShareOnAD_$guid.csv | foreach($_){$an++}) 
+    (Import-Csv Netlogonperm_$guid.csv | foreach($_){$ao++}) 
+    (Import-Csv RootHiddendelegate_$guid.csv | foreach($_){$ap++}) 
+    (Import-Csv anonymousSharesSAM_$guid.csv | foreach($_){$aq++}) 
+    (Import-Csv ServiceAcct_$guid.csv | foreach($_){$ar++}) 
+    (Import-Csv GetPatchStatus_$guid.csv | foreach($_){$as++}) 
+    (Import-Csv DomainAdmins_$guid.csv | foreach($_){$at++}) 
+    (Import-Csv LLMR_NetBIOS_$guid.csv | foreach($_){$au++}) 
+    (Import-Csv DefaultOUUGC_$guid.csv | foreach($_){$av++}) 
+    (Import-Csv AntivirusStatus_$guid.csv | foreach($_){$aw++}) 
+    (Import-Csv UnconstraintDelegation_User_$guid.csv | foreach($_){$ax++}) 
+    (Import-Csv UnconstraintDelegation_Comp_$guid.csv | foreach($_){$ay++}) 
+    (Import-Csv TrustedforDelegation_user_$guid.csv | foreach($_){$az++}) 
+    (Import-Csv TrustedforDelegation_Comp_$guid.csv | foreach($_){$aaa++}) 
+    (Import-Csv DCSyncAccess_$guid.csv | foreach($_){$aab++}) 
+    (Import-Csv dumpntds_$guid.csv | foreach($_){$aac++}) 
+    (Import-Csv GPOChangeAccess_$guid.csv | foreach($_){$aad++}) 
+    (Import-Csv ADDCList_$guid.csv | foreach($_){$aae++}) 
+    (Import-Csv CertPermissionCheck_$guid.csv | foreach($_){$aaf++}) 
+    (Import-Csv ESC1_$guid.csv | foreach($_){$aag++}) 
+    (Import-Csv ESC2_$guid.csv | foreach($_){$aah++}) 
+
+    "<html><table>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    Add-Content -Value "$header" -Path Report_Summary_$guid.html
+    "<tr><td>Default Admin Account Rename and Active Status</td><td>$aa</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Default Guest Account Rename and Active Status</td><td>$ab</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>KRBTGT - Is Pssword last set  30 Days</td><td>$ac</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>LAN Manager authentication level</td><td>$ad</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>SMB Signing Status</td><td>$ae</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>LDAP Signing Requirement</td><td>$af</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>FSMO Roles [Domain Wide Roles]</td><td>$ag</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>FSMO Roles [Forest Wide Roles]</td><td>$ah</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Account Lockout and Password Policy</td>$ai<td></td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>ASREP Roast - Password Not Required</td><td>$aj</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Kerberostable Account</td><td>$ak</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Password Never Expires</td><td>$al</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Sysvol Non-Default Permission</td>$am<td></td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Unexpected File Shares in AD</td><td>$an</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Netlogon Non-Default Permission</td>$ao<td></td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Root Hidden Delegation</td><td>$ap</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>SMB Null Session</td><td>$aq</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Service Account</td><td>$ar</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Last 3 OS Patch Status on AD</td><td>$as</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Domain Admin Lists</td><td>$at</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>LLMNR / NETBIOS / MDNS Enablement Status</td><td>$au</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Default Users under Root OU - cn=users </td><td>$av</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Antivirus Status</td><td>$aw</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Unconstraint User Delegation</td><td>$ax</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Unconstraint Computer Delegation</td><td>$ay</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>User Trusted for Delegation</td><td>$az</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Computer Trusted for Delegation</td><td>$aaa</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>DCSync Access Enabled IDs</td><td>$aab</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Users Having Acces to Dump NTDS.DIT</td><td>$aac</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Users Having Access to Modify GroupPolicy</td><td>$aad</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Users Having Access to Modify GroupPolicy</td><td>$aae</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Certificate Template Permission / Misconfiguration</td><td>$aaf</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Certificate - ESC1 Vulnerability</td><td>$aag</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Certificate - ESC2 Vulnerability</td><td>$aah</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "</table></html>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+
+   
+
+
+
 }
 
 Report $guid
