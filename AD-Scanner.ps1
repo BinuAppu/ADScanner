@@ -412,7 +412,7 @@ function checkGuestRename($guid) {
 }
 
 function ADDCList($guid) {
-    Write-Host " [+] Listing all Domain Controllers and OU." -ForegroundColor White
+    Write-Host " [+] Listing all Domain Controllers under Domain Controller OU" -ForegroundColor White
     Get-ADDomainController -Filter * | select name, computerobjectDN | Export-Csv -NoTypeInformation -Path ADDCList_$guid.csv
 }
 
@@ -765,7 +765,7 @@ function Report($guid) {
     Import-Csv DCSyncAccess_$guid.csv | ConvertTo-Html -head "<h2>DCSync Access Enabled IDs</h2><p><h3>Check if these users have excess permission as they have ObjectType value as 00000000-0000-0000-0000-000000000000<p> This could be Read All or Generic All too.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv dumpntds_$guid.csv | ConvertTo-Html -head "<h2>Users Having Acces to Dump NTDS.DIT</h2><p><h3>Members of Server Operator, Backup Operator, Administrators.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv GPOChangeAccess_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
-    Import-Csv ADDCList_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
+    Import-Csv ADDCList_$guid.csv | ConvertTo-Html -head "<h2>Listing all Domain Controllers under Domain Controller OU</h2><p><h3>Ensure only Domain Controller OU listed here.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv CertPermissionCheck_$guid.csv | ConvertTo-Html -head "<h2>Certificate Template Permission / Misconfiguration</h2><p><h3>Lookout for the permission and check if its excess !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv ESC1_$guid.csv | ConvertTo-Html -head "<h2>Certificate - ESC1 Vulnerability</h2><p><h3>Listed templates have been identified to have ESC1 Vulerability !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv ESC2_$guid.csv | ConvertTo-Html -head "<h2>Certificate - ESC2 Vulnerability</h2><p><h3>Listed templates have been identified to have ESC2 Vulerability !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
@@ -839,7 +839,7 @@ function Report($guid) {
     "<tr><td>DCSync Access Enabled IDs</td><td>$aab</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
     "<tr><td>Users Having Acces to Dump NTDS.DIT</td><td>$aac</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
     "<tr><td>Users Having Access to Modify GroupPolicy</td><td>$aad</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
-    "<tr><td>Users Having Access to Modify GroupPolicy</td><td>$aae</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
+    "<tr><td>Listing all Domain Controllers under Domain Controller OU</td><td>$aae</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
     "<tr><td>Certificate Template Permission / Misconfiguration</td><td>$aaf</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
     "<tr><td>Certificate - ESC1 Vulnerability</td><td>$aag</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
     "<tr><td>Certificate - ESC2 Vulnerability</td><td>$aah</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
