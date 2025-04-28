@@ -412,8 +412,8 @@ function checkGuestRename($guid) {
 }
 
 function ADDCList($guid) {
-    Write-Host " [+] Listing all Domain Controllers and OU." -ForegroundColor White
-    Get-ADDomainController -Filter * | select name, computerobjectDN | Export-Csv -NoTypeInformation -Path ADDCList_$guid.csv
+    Write-Host " [+] Listing all computers under Domain Controllers OU." -ForegroundColor White
+    Get-ADObject -SearchBase "OU=Domain Controllers,DC=appu,DC=local" -Filter *  -Properties isCriticalSystemObject | ?{$_.ObjectClass -eq "computer"} | Export-Csv -NoTypeInformation -Path ADDCList_$guid.csv
 }
 
 function checkPasswordPolicy($guid) {
@@ -628,6 +628,11 @@ function ldapsigning($guid){
     Add-Content -Value "$hostN , $ldap" -path ldapsigning_$guid.csv
 }
 
+function PreCreatedComp($guid) {
+    Write-host " [+] Finding Pre-created computer accounts." -ForegroundColor White
+    Get-ADComputer -Filter * -Properties userAccountControl | ?{$_.userAccountControl -like 4128} | Export-Csv -NoTypeInformation -path PreCreatedComp_$guid.csv
+}
+
 
 $host.ui.RawUI.WindowTitle = "AD Scanner [Binu Balan]"
 cls
@@ -666,6 +671,7 @@ unconstraintDelegation $guid
 DCSyncAccess $guid
 dumpntds $guid
 GPOChangeAccess $guid
+PreCreatedComp $guid
 ADDCList $guid
 CertPermissionCheck $guid
 
@@ -765,11 +771,12 @@ function Report($guid) {
     Import-Csv DCSyncAccess_$guid.csv | ConvertTo-Html -head "<h2>DCSync Access Enabled IDs</h2><p><h3>Check if these users have excess permission as they have ObjectType value as 00000000-0000-0000-0000-000000000000<p> This could be Read All or Generic All too.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv dumpntds_$guid.csv | ConvertTo-Html -head "<h2>Users Having Acces to Dump NTDS.DIT</h2><p><h3>Members of Server Operator, Backup Operator, Administrators.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv GPOChangeAccess_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
-    Import-Csv ADDCList_$guid.csv | ConvertTo-Html -head "<h2>Users Having Access to Modify GroupPolicy</h2><p><h3>Default permissions set for GPO are ignored.</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
+    Import-Csv ADDCList_$guid.csv | ConvertTo-Html -head "<h2>Listing all computers under Domain Controllers OU</h2><p><h3>Check only Domain Controllers are listed. [isCriticalSystemObject = True, means Domain Controller]</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv CertPermissionCheck_$guid.csv | ConvertTo-Html -head "<h2>Certificate Template Permission / Misconfiguration</h2><p><h3>Lookout for the permission and check if its excess !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
+    Import-Csv PreCreatedComp_$guid.csv | ConvertTo-Html -head "<h2>Finding Pre-created computer accounts</h2><p><h3>Hostname and Password of Computer will be same. [Ref: https://trustedsec.com/blog/diving-into-pre-created-computer-accounts]</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv ESC1_$guid.csv | ConvertTo-Html -head "<h2>Certificate - ESC1 Vulnerability</h2><p><h3>Listed templates have been identified to have ESC1 Vulerability !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv ESC2_$guid.csv | ConvertTo-Html -head "<h2>Certificate - ESC2 Vulnerability</h2><p><h3>Listed templates have been identified to have ESC2 Vulerability !! </h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
-
+    
     Add-Content -Value "</html>" -Path Report_$guid.html
 
     (Import-Csv checkAdminRename_$guid.csv | foreach($_){$aa++}) 
@@ -844,10 +851,6 @@ function Report($guid) {
     "<tr><td>Certificate - ESC1 Vulnerability</td><td>$aag</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
     "<tr><td>Certificate - ESC2 Vulnerability</td><td>$aah</td></tr>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
     "</table></html>" | Out-File Report_Summary_$guid.html -Append -Encoding Ascii
-
-   
-
-
 
 }
 
