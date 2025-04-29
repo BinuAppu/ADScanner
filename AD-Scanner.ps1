@@ -1,10 +1,10 @@
 <# 
 .Appu : AD Health checker
 .Created by : Binu Balan
-.Purpose : To scan Active Directory for Misconfiguration
+.Purpose : To scan Active Directory for Misconfiguration and vulnerability
 #>
 
-$version = "1.2"
+$version = "1.3"
 $Logo1 = "
                                               
     ___    ____     _____                                 
@@ -45,7 +45,26 @@ $logo3 = "
 (_)(_)(_)(_)(_) (_)       _(_)          _           (_)(_)         _(_)(_)(_)(_)  (_)        (_)(_)        (_)(_)(_)(_)(_)(_) (_)             
 (_)         (_) (_)_  _  (_)           (_)_  _  _  _(_)(_)_  _  _ (_)_  _  _ (_)_ (_)        (_)(_)        (_)(_)_  _  _  _   (_)             
 (_)         (_)(_)(_)(_)(_)              (_)(_)(_)(_)    (_)(_)(_)  (_)(_)(_)  (_)(_)        (_)(_)        (_)  (_)(_)(_)(_)  (_)             
+
+==============================================
+Author  : Binu Balan
+Version : $version
+==============================================                                                                                                                                        
                                                                                                                                         
+"
+
+$logo4 = "
+   _____  ________      _________                                         
+  /  _  \ \______ \    /   _____/ ____ _____    ____   ____   ___________ 
+ /  /_\  \ |    |  \   \_____  \_/ ___\\__  \  /    \ /    \_/ __ \_  __ \
+/    |    \|    `   \  /        \  \___ / __ \|   |  \   |  \  ___/|  | \/
+\____|__  /_______  / /_______  /\___  >____  /___|  /___|  /\___  >__|   
+        \/        \/          \/     \/     \/     \/     \/     \/                  
+
+==============================================
+Author  : Binu Balan
+Version : $version
+==============================================                                                                                                                                        
                                                                                                                                         
 "
 
@@ -58,8 +77,8 @@ function checkuserperm() {
 
     Write-Host " [+] Running the precheck :" -ForegroundColor White -NoNewline
 
-    $modulechk = (Get-Module -ListAvailable -Name ActiveDirectory).Name
-    $modulechk1 = (Get-Module -ListAvailable -Name GroupPolicy).Name
+    $modulechk = (Get-Module -Name ActiveDirectory).Name
+    $modulechk1 = (Get-Module -Name GroupPolicy).Name
     if ($modulechk -eq "ActiveDirectory" -and $modulechk1 -eq "GroupPolicy") {
         $isModuleAvailable = $true
         Write-Host " [Module] " -ForegroundColor Green -NoNewline
@@ -256,7 +275,7 @@ function GetPatchStatus($guid) {
 
 function DomainAdmins($guid) {
     Write-Host " [+] Getting Domain Admins User lists." -ForegroundColor White
-    Get-ADGroupMember "Domain Admins" -Recursive | Get-ADUser -Properties lastlogontimeStamp | select DistinguishedName,Enabled,GivenName,Name,ObjectClass,SamAccountName,UserPrincipalName,@{Name="LastLogonDate";Expression={[datetime]::FromFileTime($_.lastLogonTimestamp)}} | Export-Csv -Append -NoTypeInformation -Path DomainAdmins_$guid.csv
+    Get-ADGroupMember "Domain Admins" -Recursive | Get-ADUser -Properties lastlogontimeStamp | select DistinguishedName, Enabled, GivenName, Name, ObjectClass, SamAccountName, UserPrincipalName, @{Name = "LastLogonDate"; Expression = { [datetime]::FromFileTime($_.lastLogonTimestamp) } } | Export-Csv -Append -NoTypeInformation -Path DomainAdmins_$guid.csv
 }
 
 function LLMR_NetBIOS($guid) {
@@ -413,7 +432,7 @@ function checkGuestRename($guid) {
 
 function ADDCList($guid) {
     Write-Host " [+] Listing all computers under Domain Controllers OU." -ForegroundColor White
-    Get-ADObject -SearchBase "OU=Domain Controllers,DC=appu,DC=local" -Filter *  -Properties isCriticalSystemObject | ?{$_.ObjectClass -eq "computer"} | Export-Csv -NoTypeInformation -Path ADDCList_$guid.csv
+    Get-ADObject -SearchBase "OU=Domain Controllers,DC=appu,DC=local" -Filter *  -Properties isCriticalSystemObject | ? { $_.ObjectClass -eq "computer" } | Export-Csv -NoTypeInformation -Path ADDCList_$guid.csv
 }
 
 function checkPasswordPolicy($guid) {
@@ -566,46 +585,55 @@ function checkKRBTGTPass($guid) {
     }
 }
 
-function lmntlmauthlevel($guid){
+function lmntlmauthlevel($guid) {
     Write-host " [+] Checking LM and NTLM Authentication Level." -ForegroundColor White
     $error.clear()
     $query = (Get-ItemProperty "HKLM:\System\CurrentControlSet\Control\Lsa" -Name LmCompatibilityLevel).LmCompatibilityLevel
     Add-Content -Value "Checked_On_Server , LAN_Manager_authentication_level" -path lmntlmauthlevel_$guid.csv
     $hostN = $env:COMPUTERNAME
-    if($query -eq $null -or $Error){
+    if ($query -eq $null -or $Error) {
         Add-Content -Value "$hostN , Value not found - Falling back to default" -path lmntlmauthlevel_$guid.csv
-    } else {
-        if($query -eq 0){
+    }
+    else {
+        if ($query -eq 0) {
             Add-Content -Value "$hostN , Send LM & NTLM responses" -path lmntlmauthlevel_$guid.csv
-        } elseif ($query -eq 1) {
+        }
+        elseif ($query -eq 1) {
             Add-Content -Value "$hostN , Send LM & NTLM - use NTLMv2 session security if negotiated" -path lmntlmauthlevel_$guid.csv
-        } elseif ($query -eq 2) {
+        }
+        elseif ($query -eq 2) {
             Add-Content -Value "$hostN, Send NTLM responses only" -path lmntlmauthlevel_$guid.csv
-        } elseif ($query -eq 3) {
+        }
+        elseif ($query -eq 3) {
             Add-Content -Value "$hostN , Send NTLMv2 responses only" -path lmntlmauthlevel_$guid.csv
-        } elseif ($query -eq 4) {
+        }
+        elseif ($query -eq 4) {
             Add-Content -Value "$hostN , Send NTLMv2 responses only. Refuse LM" -path lmntlmauthlevel_$guid.csv
-        } elseif ($query -eq 5) {
+        }
+        elseif ($query -eq 5) {
             Add-Content -Value "$hostN , Send NTLMv2 responses only. Refuse LM & NTLM" -path lmntlmauthlevel_$guid.csv
-        } else {
+        }
+        else {
             Add-Content -Value "$hostN , Value not found - Falling back to default" -path lmntlmauthlevel_$guid.csv
         } 
     }
 }
 
-function checksmbsigning($guid){
+function checksmbsigning($guid) {
     # Ref : https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/overview-server-message-block-signing
     Write-host " [+] Checking SMB Signing Status." -ForegroundColor White
     $LanmanServer = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" -Name "RequireSecuritySignature").RequireSecuritySignature
     $LanmanWorkstation = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\LanmanWorkstation\Parameters" -Name "RequireSecuritySignature").RequireSecuritySignature
-    if ($LanmanServer -eq 1){
+    if ($LanmanServer -eq 1) {
         $lms = "LanmanServer - SMB Signing is Enabled"
-    } else {
+    }
+    else {
         $lms = "LanmanServer - SMB Signing is Disabled"
     }
-    if ($LanmanWorkstation -eq 1){
+    if ($LanmanWorkstation -eq 1) {
         $lmw = "LanmanWorkstation - SMB Signing is Enabled"
-    } else {
+    }
+    else {
         $lmw = "LanmanWorkstation - SMB Signing is Disabled"
     }
 
@@ -614,13 +642,14 @@ function checksmbsigning($guid){
 
 }
 
-function ldapsigning($guid){
+function ldapsigning($guid) {
     # Ref : https://support.microsoft.com/en-us/topic/2020-2023-and-2024-ldap-channel-binding-and-ldap-signing-requirements-for-windows-kb4520412-ef185fb8-00f7-167d-744c-f299a66fc00a
     Write-host " [+] Checking LDAP Signing Status." -ForegroundColor White
     $ldap = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\NTDS\Parameters" -Name "LDAPServerIntegrity").LDAPServerIntegrity
-    if ($ldap -eq 1){
+    if ($ldap -eq 1) {
         $ldap = "LDAP Signing is Enabled"
-    } else {
+    }
+    else {
         $ldap = "LDAP Signing is Disabled"
     }
     $hostN = $env:COMPUTERNAME
@@ -630,7 +659,7 @@ function ldapsigning($guid){
 
 function PreCreatedComp($guid) {
     Write-host " [+] Finding Pre-created computer accounts." -ForegroundColor White
-    Get-ADComputer -Filter * -Properties userAccountControl | ?{$_.userAccountControl -like 4128} | Export-Csv -NoTypeInformation -path PreCreatedComp_$guid.csv
+    Get-ADComputer -Filter * -Properties userAccountControl | ? { $_.userAccountControl -like 4128 } | Export-Csv -NoTypeInformation -path PreCreatedComp_$guid.csv
 }
 
 
@@ -639,7 +668,7 @@ cls
 $ErrorActionPreference = "SilentlyContinue"
 $FormatEnumerationLimit = -1
 $guid = New-Guid 
-$logoR = $logo1, $logo2, $logo3
+$logoR = $logo1, $logo2, $logo3, $logo4
 $DisplayLogo = Get-Random $logoR
 Write-Host $DisplayLogo -ForegroundColor (Get-Random "Green", "Yellow", "White")
 
@@ -764,7 +793,7 @@ function Report($guid) {
     Import-Csv Netlogonperm_$guid.csv | ConvertTo-Html -head "<h2>Netlogon Non-Default Permission</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv RootHiddendelegate_$guid.csv | ConvertTo-Html -head "<h2>Root Hidden Delegation</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv anonymousSharesSAM_$guid.csv | ConvertTo-Html -head "<h2>SMB Null Session</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
-    Import-Csv ServiceAcct_$guid.csv | ConvertTo-Html -head "<h2>Service Account</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+    Import-Csv ServiceAcct_$guid.csv | ConvertTo-Html -head "<h2>Service Account</h2><p><h3>Group Managed Service Accounts (gMSA) Ref: https://medium.com/@offsecdeer/attacking-group-managed-service-accounts-gmsa-5e9c54c56e49</h3>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv GetPatchStatus_$guid.csv | ConvertTo-Html -head "<h2>Last 3 OS Patch Status on AD</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv DomainAdmins_$guid.csv | ConvertTo-Html -head "<h2>Domain Admin Lists</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv LLMR_NetBIOS_$guid.csv | ConvertTo-Html -head "<h2>LLMNR / NETBIOS / MDNS Enablement Status</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
