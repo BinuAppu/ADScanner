@@ -137,6 +137,11 @@ Function asrep($guid) {
     Get-ADUser -LDAPFilter '(&(&(&(objectCategory=person)(objectClass=user)(userAccountControl:1.2.840.113556.1.4.803:=4194304))))' | Export-Csv -NoTypeInformation asrep_$guid.csv | Out-Null
 }
 
+Function passwordnotrequired($guid) {
+    Write-Host " [+] Password not required query." -ForegroundColor White
+    Get-ADUser -Filter {PasswordNotRequired -eq $true} -Properties PasswordNotRequired,useraccountcontrol | Export-Csv -NoTypeInformation passwordnotrequired_$guid.csv | Out-Null
+}
+
 Function Kerberosting($guid) {
     Write-Host " [+] Keberosting Query." -ForegroundColor White
     Get-ADUSer -Filter { ServicePrincipalName -ne "$null" } -Properties ServicePrincipalName | Export-Csv -NoTypeInformation kerberosting_$guid.csv | Out-Null
@@ -683,6 +688,7 @@ checkKRBTGTPass $guid
 checkFSMO $guid
 checkPasswordPolicy $guid
 asrep $guid
+passwordnotrequired $guid
 Kerberosting $guid
 PasswordNeverExpires $guid
 SysvolPerm $guid
@@ -785,7 +791,8 @@ function Report($guid) {
     Import-Csv checkFSMODomain_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Domain Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkFSMOForest_$guid.csv | ConvertTo-Html -head "<h2>FSMO Roles [Forest Wide Roles]</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv checkPasswordPolicy_$guid.csv | ConvertTo-Html -head "<h2>Account Lockout and Password Policy</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
-    Import-Csv asrep_$guid.csv | ConvertTo-Html -head "<h2>ASREP Roast - Password Not Required</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+    Import-Csv asrep_$guid.csv | ConvertTo-Html -head "<h2>ASREP Roast - Do Not Require Kerberos PreAuth</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
+    Import-Csv passwordnotrequired_$guid.csv | ConvertTo-Html -head "<h2>Password Not Required</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv Kerberosting_$guid.csv | ConvertTo-Html -head "<h2>Kerberostable Account</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv PasswordNeverExpires_$guid.csv | ConvertTo-Html -head "<h2>Password Never Expires</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
     Import-Csv SysvolPerm_$guid.csv | ConvertTo-Html -head "<h2>Sysvol Non-Default Permission</h2>" | Out-File Report_$guid.html -Append -Encoding Ascii
